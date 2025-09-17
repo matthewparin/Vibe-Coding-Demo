@@ -451,7 +451,7 @@
             <ol class="help-list">
               <li>Go to <strong>Ingest</strong> and drop CSV/XLSX actuals.</li>
               <li>Use <strong>Validate</strong> to map CoA and fix exceptions.</li>
-              <li>Open <strong>Analyze</strong> for Exec Summary, P&L variance, Waterfall.</li>
+              <li>Open <strong>Analyze</strong>, pick a <strong>Period (month)</strong>, then run variance & charts.</li>
               <li>Build <strong>Forecast</strong> with drivers; compare A/B/C scenarios.</li>
               <li>Generate <strong>Report</strong> (Close Pack), then archive in <strong>Audit</strong>.</li>
             </ol>
@@ -1449,8 +1449,8 @@
         function buildExecutiveSummary() {
           // Pull key messages from reconciliation and validation summary
           const gl = Store.getDataset('GL');
-          const ps = toDate((qs('#periodStart').value||''));
-          const pe = toDate((qs('#periodEnd').value||''));
+          const ps = toDate((qs('#periodStart') && qs('#periodStart').value)||'');
+          const pe = toDate((qs('#periodEnd') && qs('#periodEnd').value)||'');
           let reconText = 'Reconciliation not run.';
           if (ps && pe) {
             lastReconResult = computeReconciliation(ps, pe);
