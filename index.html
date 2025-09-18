@@ -5,2470 +5,756 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FP&A Close Studio</title>
     <style>
+      /* Salesforce Lightning Design System Colors + Design Tokens */
       :root {
-        --bg: #ffffff;
-        --panel: #f6f7f9;
-        --text: #0f172a;
-        --muted: #6b7280;
-        --border: #e5e7eb;
-        --accent: #2563eb;
-        --accent-contrast: #ffffff;
-        --warn: #b45309;
-        --good: #059669;
-        --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06);
+        --bg: #FAFAF9; --bg-elev: #FFFFFF; --panel: #FFFFFF; --muted: #F3F2F2; --border: #C9C7C5;
+        --text: #080707; --text-muted: #706E6B;
+        --accent: #0176D3; --accent-ink: #FFFFFF; --warn: #FE9339; --ok: #2E844A; --info: #0176D3;
+        --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+        --shadow-1: 0 1px 2px rgba(16,24,40,.06), 0 1px 1px rgba(16,24,40,.04);
+        --shadow-2: 0 10px 20px rgba(16,24,40,.10), 0 4px 6px rgba(16,24,40,.06);
+        --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Salesforce Sans", "Helvetica Neue", Arial, sans-serif;
       }
-      html[data-theme="dark"] {
-        --bg: #0b0f17;
-        --panel: #0f1722;
-        --text: #e5e7eb;
-        --muted: #94a3b8;
-        --border: #1f2937;
-        --accent: #60a5fa;
-        --accent-contrast: #0b0f17;
-        --warn: #f59e0b;
-        --good: #34d399;
-        --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 16px rgba(0,0,0,0.35);
+      [data-theme="dark"] {
+        --bg: #181818; --bg-elev: #1B1B1B; --panel: #1B1B1B; --muted: #1B1B1B; --border: #474747;
+        --text: #F3F3F3; --text-muted: #B0ADAB;
+        --accent: #1B96FF; --accent-ink: #0B1220; --warn: #FE9339; --ok: #45C65A; --info: #1B96FF;
       }
 
-      * { box-sizing: border-box; }
-      html, body { height: 100%; }
+      /* Base Reset */
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; padding: 0; }
       body {
-        margin: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        font-family: var(--font);
         background: var(--bg);
         color: var(--text);
+        line-height: 1.5;
+        font-size: 14px;
+        overflow: hidden;
       }
 
-      /* App shell */
-      header.app-header {
-        position: sticky;
-        top: 0;
-        z-index: 10;
+      /* App Shell - Lightning Style */
+      .app-shell {
+        display: grid;
+        grid-template-areas: "header header header" "nav main aside";
+        grid-template-columns: 240px 1fr 320px;
+        grid-template-rows: 56px 1fr;
+        height: 100vh;
+      }
+
+      /* Top Bar */
+      .app-header {
+        grid-area: header;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 16px;
-        background: var(--bg);
+        padding: 0 var(--s-4);
+        background: var(--bg-elev);
         border-bottom: 1px solid var(--border);
-        box-shadow: var(--shadow);
+        box-shadow: var(--shadow-1);
+        z-index: 100;
       }
-      .title {
+
+      .app-title {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: var(--s-3);
         font-weight: 700;
-        letter-spacing: 0.2px;
+        font-size: 16px;
+        color: var(--text);
       }
-      .title .badge {
-        font-size: 12px;
+
+      .app-badge {
+        font-size: 11px;
         padding: 2px 8px;
-        border-radius: 999px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        color: var(--muted);
+        border-radius: var(--r-xs);
+        background: var(--muted);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
-      .header-actions { display: flex; align-items: center; gap: 8px; }
-      button, .button {
-        display: inline-flex;
+
+      .cmd-k-trigger {
+        display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        font-size: 14px;
-        border-radius: 8px;
+        gap: var(--s-2);
+        padding: var(--s-2) var(--s-3);
+        background: var(--muted);
         border: 1px solid var(--border);
-        background: var(--panel);
-        color: var(--text);
+        border-radius: var(--r-sm);
         cursor: pointer;
+        min-width: 200px;
+        font-size: 13px;
+        color: var(--text-muted);
       }
-      button.primary {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: var(--accent-contrast);
-      }
-      button.ghost { background: transparent; }
-      button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-      .layout {
-        display: grid;
-        grid-template-columns: 220px 1fr 320px;
-        grid-template-rows: 1fr;
-        min-height: calc(100vh - 60px);
+      .kbd {
+        padding: 2px 6px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 11px;
+        font-family: monospace;
       }
-      nav.sidenav {
+
+      /* Left Navigation */
+      .app-nav {
+        grid-area: nav;
+        background: var(--panel);
         border-right: 1px solid var(--border);
-        background: var(--panel);
-        padding: 12px;
+        padding: var(--s-4);
+        overflow-y: auto;
       }
-      .nav-section { font-size: 12px; color: var(--muted); margin: 6px 8px; text-transform: uppercase; }
-      .nav-list { list-style: none; margin: 0; padding: 0; }
-      .nav-list li { margin: 4px 0; }
-      .nav-link {
-        width: 100%;
-        appearance: none;
-        background: transparent;
-        border: 1px solid transparent;
-        padding: 10px 12px;
-        border-radius: 8px;
-        text-align: left;
-        color: var(--text);
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: var(--s-3);
+        padding: var(--s-2) var(--s-3);
+        border-radius: var(--r-sm);
         cursor: pointer;
+        margin-bottom: var(--s-1);
+        transition: all 0.15s ease;
+        border: 1px solid transparent;
       }
-      .nav-link.active { background: var(--bg); border-color: var(--border); }
 
-      main.app-main { padding: 16px; }
-      .view { display: none; }
-      .view.active { display: block; }
+      .nav-item:hover {
+        background: var(--muted);
+      }
 
-      aside.right-rail {
-        border-left: 1px solid var(--border);
-        background: var(--panel);
-        padding: 12px;
+      .nav-item.active {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        box-shadow: var(--shadow-1);
+      }
+
+      /* Main Content */
+      .app-main {
+        grid-area: main;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        overflow: hidden;
       }
-      .rail-section { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
-      .rail-header { display:flex; align-items:center; justify-content: space-between; padding:10px 12px; border-bottom:1px solid var(--border); }
-      .rail-body { padding: 10px 12px; }
 
-      .help-list { margin: 0; padding-left: 18px; }
-      .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; padding: 2px 6px; border:1px solid var(--border); border-bottom-width:2px; border-radius:6px; background: var(--panel); }
-
-      .decision-form { display:flex; gap:8px; margin-bottom: 8px; }
-      .decision-form input { flex: 1; padding: 8px 10px; border-radius: 8px; border:1px solid var(--border); background: var(--bg); color: var(--text); }
-      .decision-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-      .decision-item { padding: 8px 10px; border:1px solid var(--border); border-radius: 8px; background: var(--panel); }
-
-      .notice { padding: 10px 12px; border: 1px dashed var(--border); border-radius: 10px; background: var(--panel); color: var(--muted); }
-
-      /* Data preview */
-      .preview-section { margin-top: 16px; }
-      .dataset-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 12px; }
-      .dataset-header { display:flex; align-items:center; justify-content: space-between; padding:10px 12px; border-bottom:1px solid var(--border); }
-      .dataset-body { padding: 0 12px 12px 12px; overflow: auto; }
-      table.data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
-      table.data-table thead th { position: sticky; top: 0; background: var(--panel); color: var(--muted); text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
-      table.data-table tbody td { padding: 8px; border-bottom: 1px solid var(--border); }
-      table.data-table tbody tr:hover { background: var(--panel); }
-
-      /* Ingest */
-      .dropzone { height: 220px; border: 2px dashed var(--border); border-radius: 12px; display:flex; align-items:center; justify-content:center; color: var(--muted); transition: border-color 120ms, background 120ms; }
-      .dropzone.dragover { border-color: var(--accent); background: rgba(37, 99, 235, 0.06); color: var(--text); }
-      .ingest-actions { display:flex; gap: 8px; margin: 8px 0 12px; align-items:center; flex-wrap: wrap; }
-
-      /* Modal */
-      .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 50; }
-      .modal { width: min(960px, 96vw); max-height: 88vh; overflow: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
-      .modal header { display:flex; align-items:center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-      .modal .content { padding: 12px 14px; }
-      .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-      .mapping-row { display:grid; grid-template-columns: 220px 1fr; gap: 12px; align-items:center; }
-      .mapping-row label { color: var(--muted); font-size: 12px; }
-      .mapping-row select { width: 100%; padding: 8px 10px; border:1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
-      .modal footer { display:flex; gap: 8px; justify-content: flex-end; padding: 12px 14px; border-top: 1px solid var(--border); background: var(--panel); }
-
-      /* Validate & Exceptions */
-      .validate-controls { display:flex; gap: 8px; align-items:center; flex-wrap: wrap; margin-bottom: 10px; }
-      .validate-controls input { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
-      .summary-cards { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin: 10px 0; }
-      .summary-card { background: var(--bg); border:1px solid var(--border); border-radius: 10px; padding: 8px 10px; box-shadow: var(--shadow); }
-      .chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius: 999px; background: var(--panel); border:1px solid var(--border); font-size: 12px; color: var(--muted); }
-      .chip.pass { color: var(--good); }
-      .chip.fail { color: var(--warn); }
-      .filters { display:flex; gap: 8px; align-items:center; flex-wrap: wrap; margin: 8px 0; }
-      .filters select, .filters input { padding: 6px 8px; border:1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
-      .exceptions-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
-      .exceptions-table th, .exceptions-table td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
-      .exceptions-table th { position: sticky; top: 0; background: var(--panel); color: var(--muted); }
-      .rule-tag { font-weight: 600; }
-      .status-open { color: var(--warn); }
-      .status-ignored { color: var(--muted); }
-      .status-resolved { color: var(--good); }
-      .bulk-bar { display:flex; gap:8px; align-items:center; margin:8px 0; }
-
-      /* Passphrase modal */
-      .meter { width: 160px; height: 6px; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; display:inline-block; vertical-align: middle; }
-      .meter-bar { height: 100%; width: 0%; background: var(--warn); transition: width 160ms; }
-      .meter-bar.ok { background: #d97706; }
-      .meter-bar.strong { background: var(--good); }
-
-      /* Analyze */
-      .analyze-controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
-      .analyze-controls select, .analyze-controls input { padding: 6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--bg); color: var(--text); }
-      .drillbar { display:flex; gap:8px; align-items:center; margin: 8px 0; }
-      .drillbar .crumb { padding:2px 8px; border-radius:999px; background: var(--panel); border:1px solid var(--border); font-size:12px; }
-      .cards-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-      @media (max-width: 980px) { .cards-2 { grid-template-columns: 1fr; } }
-
-      /* Busy overlay */
-      .busy-overlay { position: fixed; inset: 0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.25); z-index: 1000; }
-      .busy-box { background: var(--bg); color: var(--text); padding: 12px 16px; border:1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); display:flex; align-items:center; gap:10px; }
-      .spinner { width: 16px; height: 16px; border:2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-      @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-      .chart-canvas { width: 100%; height: 240px; display: block; }
-      input[type=range] { display: none; }
-
-      /* Print (Close Pack) */
-      @media print {
-        header.app-header, nav.sidenav, aside.right-rail { display: none !important; }
-        .layout { grid-template-columns: 1fr !important; }
-        #closePackPreview { border: none !important; box-shadow: none !important; }
+      .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--s-4) var(--s-5);
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-elev);
       }
+
+      .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text);
+      }
+
+      .page-content {
+        flex: 1;
+        padding: var(--s-5);
+        overflow-y: auto;
+      }
+
+      /* Right Aside */
+      .app-aside {
+        grid-area: aside;
+        background: var(--panel);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .aside-section {
+        flex: 1;
+        padding: var(--s-4);
+        border-bottom: 1px solid var(--border);
+        overflow-y: auto;
+      }
+
+      /* Command Palette */
+      .cmd-palette {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 15vh;
+        z-index: 1000;
+      }
+
+      .cmd-palette.active {
+        display: flex;
+      }
+
+      .cmd-palette-content {
+        background: var(--bg-elev);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-2);
+        width: 100%;
+        max-width: 640px;
+        max-height: 400px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .cmd-search {
+        padding: var(--s-4);
+        border: none;
+        border-bottom: 1px solid var(--border);
+        background: transparent;
+        font-size: 16px;
+        color: var(--text);
+        outline: none;
+      }
+
+      .cmd-results {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--s-2);
+      }
+
+      .cmd-item {
+        display: flex;
+        align-items: center;
+        gap: var(--s-3);
+        padding: var(--s-3);
+        border-radius: var(--r-sm);
+        cursor: pointer;
+        margin-bottom: var(--s-1);
+      }
+
+      .cmd-item:hover,
+      .cmd-item.selected {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s-2);
+        padding: var(--s-2) var(--s-4);
+        border-radius: var(--r-sm);
+        border: 1px solid var(--border);
+        background: var(--bg-elev);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+
+      .btn:hover {
+        background: var(--muted);
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      /* Cards */
+      .card {
+        background: var(--bg-elev);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-1);
+        overflow: hidden;
+        margin-bottom: var(--s-4);
+      }
+
+      .card-header {
+        padding: var(--s-4);
+        border-bottom: 1px solid var(--border);
+        background: var(--muted);
+      }
+
+      .card-body {
+        padding: var(--s-4);
+      }
+
+      /* Network Badge */
+      .network-badge {
+        position: fixed;
+        bottom: var(--s-4);
+        right: var(--s-4);
+        padding: var(--s-2) var(--s-3);
+        background: var(--ok);
+        color: white;
+        border-radius: var(--r-sm);
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 1000;
+      }
+
+      /* Scenario Cards */
+      .scenario-board {
+        display: flex;
+        gap: var(--s-4);
+        margin: var(--s-4) 0;
+        overflow-x: auto;
+        padding-bottom: var(--s-2);
+      }
+
+      .scenario-card {
+        min-width: 280px;
+        background: var(--bg-elev);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        padding: var(--s-4);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .scenario-card:hover {
+        box-shadow: var(--shadow-2);
+        transform: translateY(-2px);
+      }
+
+      .scenario-card.active {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+      }
+
+      /* Utilities */
+      .text-muted { color: var(--text-muted); }
+      .text-small { font-size: 12px; }
+      .font-weight-bold { font-weight: 600; }
+      .d-flex { display: flex; }
+      .justify-content-between { justify-content: space-between; }
+      .mb-3 { margin-bottom: var(--s-3); }
+      .mb-4 { margin-bottom: var(--s-4); }
 
       /* Responsive */
-      @media (max-width: 1200px) {
-        .layout { grid-template-columns: 200px 1fr 260px; }
+      @media (max-width: 1024px) {
+        .app-shell {
+          grid-template-columns: 60px 1fr 0;
+        }
+        .app-aside {
+          display: none;
+        }
       }
-      @media (max-width: 980px) {
-        .layout { grid-template-columns: 1fr; }
-        nav.sidenav { order: 2; }
-        aside.right-rail { order: 3; }
-        .rail-section { border-radius: 8px; }
+
+      /* Motion */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
   </head>
   <body>
-    <header class="app-header" role="banner">
-      <div class="title" aria-label="App title">
-        <span>FP&A Close Studio</span>
-        <span class="badge">Local • Offline</span>
-      </div>
-      <div class="header-actions">
-        <button id="demoBtn" class="button" title="Load Demo Workspace (stub)">🧪 Load Demo Workspace</button>
-        <button id="themeBtn" class="button" title="Toggle light/dark">🌗 Theme</button>
-      </div>
-    </header>
+    <!-- App Shell -->
+    <div class="app-shell">
+      <!-- Top Bar -->
+      <header class="app-header">
+        <div class="app-title">
+          <span>FP&A Close Studio</span>
+          <span class="app-badge">Offline Ready</span>
+        </div>
 
-    <div class="layout">
-      <nav class="sidenav" aria-label="Primary">
-        <div class="nav-section">Workflow</div>
-        <ul class="nav-list">
-          <li><button class="nav-link active" data-view="ingest">Ingest</button></li>
-          <li><button class="nav-link" data-view="validate">Validate</button></li>
-          <li><button class="nav-link" data-view="analyze">Analyze</button></li>
-          <li><button class="nav-link" data-view="forecast">Forecast</button></li>
-          <li><button class="nav-link" data-view="report">Report</button></li>
-          <li><button class="nav-link" data-view="audit">Audit</button></li>
-        </ul>
+        <div class="cmd-k-trigger" onclick="toggleCommandPalette()">
+          <span>Quick actions...</span>
+          <span class="kbd">⌘K</span>
+        </div>
+
+        <div class="d-flex" style="gap: var(--s-2);">
+          <button class="btn" onclick="toggleTheme()" title="Toggle theme">🌗</button>
+          <button class="btn" onclick="loadDemo()" title="Load Demo">🧪</button>
+        </div>
+      </header>
+
+      <!-- Left Navigation -->
+      <nav class="app-nav">
+        <div class="nav-item active" data-view="ingest">
+          <span>📁</span>
+          <span>Ingest</span>
+        </div>
+        <div class="nav-item" data-view="validate">
+          <span>✓</span>
+          <span>Validate</span>
+        </div>
+        <div class="nav-item" data-view="analyze">
+          <span>📊</span>
+          <span>Analyze</span>
+        </div>
+        <div class="nav-item" data-view="forecast">
+          <span>🔮</span>
+          <span>Forecast</span>
+        </div>
+        <div class="nav-item" data-view="report">
+          <span>📋</span>
+          <span>Report</span>
+        </div>
+        <div class="nav-item" data-view="audit">
+          <span>🔍</span>
+          <span>Audit</span>
+        </div>
       </nav>
 
-      <main class="app-main" role="main">
-        <section id="view-ingest" class="view active">
-          <h2>Ingest</h2>
-          <div class="ingest-actions">
-            <input id="fileInput" type="file" accept=".csv, .xlsx" multiple style="display:none" />
-            <button id="pickFiles" class="button">Choose CSV/XLSX</button>
-            <span class="notice" style="border-style: solid;">Local parse only. Multiple files supported.</span>
+      <!-- Main Content -->
+      <main class="app-main">
+        <div class="page-header">
+          <h1 class="page-title" id="pageTitle">Data Ingestion</h1>
+          <div class="d-flex" style="gap: var(--s-2);">
+            <button class="btn btn-primary" onclick="loadDemo()">Load Demo</button>
           </div>
-          <div id="dropzone" class="dropzone">Drop CSV or XLSX files here</div>
-          <div class="preview-section">
-            <h3 style="margin-bottom:8px">Data Preview</h3>
-            <div id="dataPreview"></div>
-            <div class="notice" style="margin-top:8px">Tip: Import actuals for this month, then go to Validate → Analyze → Forecast to see the full flow.</div>
-          </div>
-        </section>
-        <section id="view-validate" class="view">
-          <h2>Validate</h2>
-          <div class="validate-controls">
-            <label>Period Start <input type="date" id="periodStart" /></label>
-            <label>Period End <input type="date" id="periodEnd" /></label>
-            <button id="runValidation" class="button primary">Run Validation</button>
-            <span id="validationMsg" class="chip">Ready</span>
-          </div>
-          <div class="notice">Goal: Clean data before analysis. Resolve exceptions or add ignores with reasons. Debits=Credits and roll-forward checks below.</div>
-          <div class="summary-cards" id="validationSummary"></div>
-          <div class="filters">
-            <select id="filterRule">
-              <option value="">All rules</option>
-            </select>
-            <select id="filterStatus">
-              <option value="">All status</option>
-              <option value="open">Open</option>
-              <option value="resolved">Resolved</option>
-              <option value="ignored">Ignored</option>
-            </select>
-            <input id="filterSearch" placeholder="Search memo, account, doc id" />
-          </div>
-          <div style="overflow:auto; border:1px solid var(--border); border-radius:10px;">
-            <div class="bulk-bar">
-              <label><input type="checkbox" id="selectAllExceptions" /> Select all</label>
-              <button id="bulkResolve" class="button">Resolve</button>
-              <button id="bulkIgnore" class="button">Ignore</button>
-              <button id="bulkMergeDupes" class="button">Merge duplicates</button>
-              <span class="chip" id="bulkCount">0 selected</span>
-            </div>
-            <table class="exceptions-table" id="exceptionsTable">
-              <thead>
-                <tr>
-                  <th><input type="checkbox" id="headerSelect" /></th>
-                  <th>Rule</th>
-                  <th>Details</th>
-                  <th>Row</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="exceptionsBody"></tbody>
-            </table>
-          </div>
+        </div>
 
-          <div class="dataset-card" style="margin-top:12px">
-            <div class="dataset-header">
-              <div><strong>Reconciliation</strong> <span style="color:var(--muted); font-size:12px">Subledger → GL, Debits=Credits, Roll-forward</span></div>
-              <div>
-                <button id="runReconciliation" class="button">Run Reconciliation</button>
-              </div>
+        <div class="page-content" id="mainContent">
+          <div class="card">
+            <div class="card-header">
+              <h3>Welcome to FP&A Close Studio</h3>
             </div>
-            <div class="dataset-body" id="reconBody">
-              <div class="notice">Set period dates and click Run Reconciliation.</div>
-            </div>
-          </div>
-        </section>
-        <section id="view-analyze" class="view">
-          <h2>Analyze</h2>
-          <div class="analyze-controls">
-            <label>Compare
-              <select id="compareMode">
-                <option value="MoM">MoM</option>
-                <option value="QoQ">QoQ</option>
-                <option value="YoY">YoY</option>
-              </select>
-            </label>
-            <label>Actual vs
-              <select id="benchMode">
-                <option value="BUDGET">Budget</option>
-                <option value="FORECAST">Forecast</option>
-              </select>
-            </label>
-            <label>Period <input id="anPeriod" type="month" placeholder="2024-03" /></label>
-            <button id="anPrev" class="button">◀</button>
-            <button id="anNext" class="button">▶</button>
-            <button id="runAnalysis" class="button primary">Run Analysis</button>
-          </div>
-          <div class="notice">Goal: Understand performance. Choose the comparison, set a month, and drill from Account → Dept → Product.</div>
-          <div class="drillbar">
-            <span class="crumb" id="crumb-level">Account</span>
-            <span class="crumb" id="crumb-path"></span>
-            <button id="drillUp" class="button">Drill Up</button>
-          </div>
-          <div class="cards-2">
-            <div class="dataset-card">
-              <div class="dataset-header"><strong>Variance Table</strong></div>
-              <div class="dataset-body" id="varianceTable"></div>
-            </div>
-            <div class="dataset-card">
-              <div class="dataset-header"><strong>Charts</strong></div>
-              <div class="dataset-body">
-                <canvas id="chart1" class="chart-canvas"></canvas>
-                <canvas id="chart2" class="chart-canvas" style="margin-top:12px"></canvas>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section id="view-forecast" class="view">
-          <h2>Forecast</h2>
-          <div class="analyze-controls">
-            <label>Scenario
-              <select id="scenarioSelect">
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-              </select>
-            </label>
-            <input id="scenarioName" placeholder="Scenario name" style="min-width:180px" />
-            <button id="saveScenario" class="button">Save</button>
-            <label>Period <input id="fcPeriod" placeholder="YYYY-MM" style="width:120px" /></label>
-            <button id="runForecast" class="button primary">Run Forecast</button>
-          </div>
-          <div class="notice">Goal: Project the next period with drivers. Save scenarios A/B/C and compare deltas vs Actuals and Budget.</div>
-          <div class="dataset-card">
-            <div class="dataset-header"><strong>Drivers</strong> <span style="color:var(--muted); font-size:12px">Revenue, COGS, Headcount & Comp</span></div>
-            <div class="dataset-body">
-              <div class="ingest-actions" style="margin-bottom:6px">
-                <span class="chip">What‑if:</span>
-                <button id="wiUpside" class="button">Upside (+10% rev, +3 Sales, COGS 24%)</button>
-                <button id="wiDownside" class="button">Downside (−5% rev, −2 Sales, COGS 28%)</button>
-                <button id="wiEfficiency" class="button">Efficiency (COGS −3 pts, +2 Sales, −1 Mkt)</button>
-              </div>
-              <div class="grid">
-                <div class="mapping-row"><label>Revenue growth %</label><input id="drvRevGrowth" type="number" step="0.1" value="5" /></div>
-                <div class="mapping-row"><label>COGS % of revenue</label><input id="drvCogsPct" type="number" step="0.1" value="25" /></div>
-                <div class="mapping-row"><label>Sales headcount Δ</label><input id="drvHcSales" type="number" step="1" value="0" /></div>
-                <div class="mapping-row"><label>R&D headcount Δ</label><input id="drvHcRD" type="number" step="1" value="0" /></div>
-                <div class="mapping-row"><label>Marketing headcount Δ</label><input id="drvHcMkt" type="number" step="1" value="0" /></div>
-                <div class="mapping-row"><label>G&A headcount Δ</label><input id="drvHcGA" type="number" step="1" value="0" /></div>
-                <div class="mapping-row"><label>Comp change % (all depts)</label><input id="drvCompPct" type="number" step="0.1" value="0" /></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="cards-2" style="margin-top:12px">
-            <div class="dataset-card">
-              <div class="dataset-header"><strong>Forecast Summary</strong> <span style="color:var(--muted); font-size:12px">Actual vs Budget vs Scenario</span></div>
-              <div class="dataset-body" id="forecastSummary"></div>
-            </div>
-            <div class="dataset-card">
-              <div class="dataset-header"><strong>Ops Time Tax</strong> <span style="color:var(--muted); font-size:12px">Baseline & ROI</span></div>
-              <div class="dataset-body">
-                <div class="grid">
-                  <div class="mapping-row"><label>Baseline hours/month</label><input id="opsBaseline" type="number" step="1" value="120" /></div>
-                  <div class="mapping-row"><label>$ Rate per hour</label><input id="opsRate" type="number" step="1" value="100" /></div>
+            <div class="card-body">
+              <p>Modern, offline-first application for monthly financial close processes with Salesforce Lightning Design System.</p>
+              <div class="scenario-board">
+                <div class="scenario-card active">
+                  <h4>Base Case</h4>
+                  <div class="text-muted text-small mb-3">Conservative growth</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">+5%</span>
+                  </div>
                 </div>
-                <div class="grid" style="margin-top:8px">
-                  <div class="mapping-row"><label>Rows processed</label><input id="opsRows" type="number" step="100" value="0" /></div>
-                  <div class="mapping-row"><label>Exceptions resolved</label><input id="opsResolved" type="number" step="1" value="0" /></div>
-                  <div class="mapping-row"><label>Auto tie-outs</label><input id="opsAutoTieouts" type="number" step="1" value="0" /></div>
+                <div class="scenario-card">
+                  <h4>Upside</h4>
+                  <div class="text-muted text-small mb-3">Optimistic scenario</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">+15%</span>
+                  </div>
                 </div>
-                <div style="margin-top:8px" id="opsMetrics"></div>
+                <div class="scenario-card">
+                  <h4>Downside</h4>
+                  <div class="text-muted text-small mb-3">Conservative scenario</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">-5%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
-        <section id="view-report" class="view">
-          <h2>Report</h2>
-          <div class="ingest-actions">
-            <button id="generateClosePack" class="button primary">Generate Close Pack</button>
-            <button id="exportClosePackPdf" class="button">Export PDF</button>
-            <button id="selfTest" class="button">Run Self-Test</button>
-            <span id="selfTestStatus" class="chip">Idle</span>
-          </div>
-          <div class="notice">Goal: Produce a Close Pack in one click. Preview and export to PDF or use Print → Save as PDF offline.</div>
-          <div class="dataset-card" id="closePackPreview">
-            <div class="dataset-header"><strong>Close Pack Preview</strong> <span style="color:var(--muted); font-size:12px">Executive Summary, KPIs, Variance Bridges, Dept Rollups, Footnotes</span></div>
-            <div class="dataset-body" id="closePackBody"></div>
-          </div>
-        </section>
-        <section id="view-audit" class="view">
-          <h2>Audit</h2>
-          <div class="ingest-actions">
-            <button id="exportAuditCsv" class="button">Export Audit Log (CSV)</button>
-            <button id="exportWorkspace" class="button">Export Workspace (.fpa.json)</button>
-            <button id="exportWorkspaceEnc" class="button primary">Export Encrypted (.fpa.json)</button>
-            <input id="importWorkspaceInput" type="file" accept=".json,.fpa.json" style="display:none" />
-            <button id="importWorkspaceBtn" class="button">Import Workspace (.fpa.json)</button>
-            <button id="importWorkspaceEncBtn" class="button">Import Encrypted (.fpa.json)</button>
-            <input id="importWorkspaceEncInput" type="file" accept=".json,.fpa.json" style="display:none" />
-          </div>
-          <div class="dataset-card">
-            <div class="dataset-header"><strong>Snapshots</strong> <span style="color:var(--muted); font-size:12px">Immutable history</span></div>
-            <div class="dataset-body">
-              <div id="snapshotList"></div>
-            </div>
-          </div>
-        </section>
+        </div>
       </main>
 
-      <aside class="right-rail" aria-label="Help and Decision Log">
-        <section class="rail-section" id="helpPanel">
-          <div class="rail-header">
-            <strong>Help</strong>
-            <button class="button ghost" id="toggleHelp" aria-expanded="true">Hide</button>
-          </div>
-          <div class="rail-body" id="helpBody">
-            <h3 style="margin-top:0">60-second quickstart</h3>
-            <ol class="help-list">
-              <li>Go to <strong>Ingest</strong> and drop CSV/XLSX actuals.</li>
-              <li>Use <strong>Validate</strong> to map CoA and fix exceptions.</li>
-              <li>Open <strong>Analyze</strong>, pick a <strong>Period (month)</strong>, then run variance & charts.</li>
-              <li>Build <strong>Forecast</strong> with drivers; compare A/B/C scenarios.</li>
-              <li>Generate <strong>Report</strong> (Close Pack), then archive in <strong>Audit</strong>.</li>
+      <!-- Right Aside -->
+      <aside class="app-aside">
+        <div class="aside-section">
+          <h3>Quick Help</h3>
+          <div class="text-small text-muted mb-3">
+            <strong>60-second quickstart:</strong>
+            <ol style="margin: 8px 0; padding-left: 16px; font-size: 12px;">
+              <li>Load demo data</li>
+              <li>Run validation</li>
+              <li>Create scenarios</li>
+              <li>Generate reports</li>
             </ol>
-            <h3>Keyboard tips</h3>
-            <ul class="help-list">
-              <li><span class="kbd">Cmd/Ctrl+G</span> then <span class="kbd">I/V/A/F/R/U</span> to switch views</li>
-              <li><span class="kbd">Cmd/Ctrl+K</span> toggle theme</li>
-              <li><span class="kbd">Cmd/Ctrl+D</span> load demo</li>
-              <li><span class="kbd">Cmd/Ctrl+H</span> show/hide help</li>
-              <li><span class="kbd">Cmd/Ctrl+Enter</span> run validation (Validate)</li>
-              <li><span class="kbd">Cmd/Ctrl+A</span> select all exceptions (Validate)</li>
-              <li><span class="kbd">Cmd/Ctrl+M</span> merge duplicates (Validate)</li>
-              <li><span class="kbd">Cmd/Ctrl+E</span> resolve selected (Validate)</li>
-              <li><span class="kbd">Cmd/Ctrl+I</span> ignore selected (Validate)</li>
-            </ul>
           </div>
-        </section>
-
-        <section class="rail-section">
-          <div class="rail-header">
-            <strong>Decision Log</strong>
-            <span style="color:var(--muted); font-size:12px">Local-only</span>
+          <button class="btn btn-primary" style="width: 100%;" onclick="loadDemo()">Start Demo</button>
+        </div>
+        
+        <div class="aside-section">
+          <h3>Decision Log</h3>
+          <div id="decisionLog" class="text-small">
+            <div class="mb-3">
+              <div class="font-weight-bold">System Initialized</div>
+              <div class="text-muted text-small">Salesforce Lightning Design theme applied</div>
+            </div>
           </div>
-          <div class="rail-body">
-            <form id="decisionForm" class="decision-form" autocomplete="off">
-              <input id="decisionInput" placeholder="Add decision, assumption, or note" />
-              <button class="primary" type="submit">Add</button>
-            </form>
-            <ul id="decisionList" class="decision-list" aria-live="polite"></ul>
-          </div>
-        </section>
+        </div>
       </aside>
     </div>
 
+    <!-- Command Palette -->
+    <div class="cmd-palette" id="commandPalette">
+      <div class="cmd-palette-content">
+        <input type="text" class="cmd-search" placeholder="Type a command..." id="cmdSearch">
+        <div class="cmd-results" id="cmdResults"></div>
+      </div>
+    </div>
+
+    <!-- Network Monitor -->
+    <div class="network-badge" id="networkBadge">Network calls: 0</div>
+
     <script>
-      // Optional CDN libs (PapaParse + SheetJS + Dexie) with offline fallback
-      // Note: avoid including any HTML closing tag text here; it can terminate this script block unexpectedly.
-      // If you need to load these libraries, add separate script tags outside of this inline script.
-      (function() {
-        // Query helpers must be defined first; used by subsequent initializers
-        const qs = (sel, el=document) => el.querySelector(sel);
-        const qsa = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-        // Five essentials chosen defaults (for display)
-        const ESSENTIALS = {
-          Intake: 'CSV/XLSX uploads only',
-          Reports: 'Exec Summary + P&L variance + Waterfall',
-          Scale: '≤100k rows total',
-          Security: 'Local-only; passphrase-encrypted exports',
-          Forecast: 'Driver-based'
+      // Core App State
+      const AppState = {
+        currentView: 'ingest',
+        theme: localStorage.getItem('theme') || 'light',
+        networkCalls: 0,
+        decisions: []
+      };
+
+      // Initialize App
+      document.addEventListener('DOMContentLoaded', initializeApp);
+
+      function initializeApp() {
+        setupTheme();
+        setupNavigation();
+        setupCommandPalette();
+        setupNetworkMonitoring();
+        logDecision('Application initialized with Salesforce Lightning Design System');
+      }
+
+      // Theme Management
+      function setupTheme() {
+        document.documentElement.setAttribute('data-theme', AppState.theme);
+      }
+
+      function toggleTheme() {
+        AppState.theme = AppState.theme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', AppState.theme);
+        document.documentElement.setAttribute('data-theme', AppState.theme);
+        logDecision(`Theme switched to ${AppState.theme} mode`);
+      }
+
+      // Navigation
+      function setupNavigation() {
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const view = item.dataset.view;
+            if (view) switchView(view);
+          });
+        });
+      }
+
+      function switchView(view) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.classList.toggle('active', item.dataset.view === view);
+        });
+        
+        AppState.currentView = view;
+        updatePageTitle(view);
+        logDecision(`Switched to ${view} view`);
+      }
+
+      function updatePageTitle(view) {
+        const titles = {
+          ingest: 'Data Ingestion',
+          validate: 'Validation & Reconciliation', 
+          analyze: 'Analysis & Variance',
+          forecast: 'Scenario Planning',
+          report: 'Close Pack Generation',
+          audit: 'Audit Trail'
         };
-        function renderEssentialsInHelp() {
-          const helpBody = qs('#helpBody');
-          if (!helpBody) return;
-          const div = document.createElement('div');
-          div.innerHTML = `<h3>Essentials</h3>
-            <ul class="help-list">
-              <li><strong>Intake</strong>: ${ESSENTIALS.Intake}</li>
-              <li><strong>First reports</strong>: ${ESSENTIALS.Reports}</li>
-              <li><strong>Scale</strong>: ${ESSENTIALS.Scale}</li>
-              <li><strong>Security</strong>: ${ESSENTIALS.Security}</li>
-              <li><strong>Forecast</strong>: ${ESSENTIALS.Forecast}</li>
-            </ul>`;
-          helpBody.prepend(div);
-          addDecision('Essentials confirmed: Intake CSV/XLSX; Reports Exec+P&L+Waterfall; Scale ≤100k; Security local+encrypted exports; Forecast driver-based');
-        }
-        // Forecast state persisted in DB
-        const SCEN_TABLE = 'scenarios';
-        (async function ensureScenarioStore() {
-          if (DB.version && typeof DB.version === 'function') {
-            // Dexie path: ignore schema changes runtime; rely on JSON datasets for persistence fallback
-          }
-        })();
-
-        const scenarioDefaults = { name: '', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 };
-        const SCEN_KEYS = ['A','B','C'];
-        const scenarioCache = new Map();
-
-        async function loadScenario(key) {
-          // store in datasets meta for simplicity
-          const metaName = `SCEN_${key}`;
-          const rec = await DB.datasets.get(metaName);
-          const rows = rec && rec.rows ? rec.rows : [scenarioDefaults];
-          scenarioCache.set(key, { ...scenarioDefaults, ...(rows[0]||{}) });
-          return scenarioCache.get(key);
-        }
-        async function saveScenario(key, data) {
-          const metaName = `SCEN_${key}`;
-          scenarioCache.set(key, data);
-          await DB.datasets.put({ name: metaName, rows: [data] });
-          await snapshot(`Save scenario ${key}`, { [metaName]: [data] });
-        }
-
-        const scenSelect = () => qs('#scenarioSelect');
-        const scenName = () => qs('#scenarioName');
-        const fcPeriod = () => qs('#fcPeriod');
-        const drvRevGrowth = () => qs('#drvRevGrowth');
-        const drvCogsPct = () => qs('#drvCogsPct');
-        const drvHcSales = () => qs('#drvHcSales');
-        const drvHcRD = () => qs('#drvHcRD');
-        const drvHcMkt = () => qs('#drvHcMkt');
-        const drvHcGA = () => qs('#drvHcGA');
-        const drvCompPct = () => qs('#drvCompPct');
-        const saveScenarioBtn = () => qs('#saveScenario');
-        const runForecastBtn = () => qs('#runForecast');
-        const forecastSummaryRoot = () => qs('#forecastSummary');
-        const opsBaselineInput = () => qs('#opsBaseline');
-        const opsRateInput = () => qs('#opsRate');
-        const opsMetricsRoot = () => qs('#opsMetrics');
-
-        // Ops Time Tax estimation
-        function estimateOpsTimeSaved(glRows, exceptions, recon) {
-          const rowsProcessed = Number(qs('#opsRows')?.value || glRows.length || 0);
-          const exceptionsResolved = Number(qs('#opsResolved')?.value || (exceptions || []).filter(e => e.status === 'resolved').length || 0);
-          const autoTieOuts = Number(qs('#opsAutoTieouts')?.value || ((recon && Array.isArray(recon.tieRows)) ? recon.tieRows.filter(r => Math.abs(r.Variance) < 1e-6).length : 0) || 0);
-          // Heuristic: 0.02 hr per GL row + 0.25 hr per resolved exception + 0.1 hr per auto tie-out
-          const hours = rowsProcessed * 0.02 + exceptionsResolved * 0.25 + autoTieOuts * 0.1;
-          return Math.round(hours * 10) / 10;
-        }
-        function renderOpsMetrics() {
-          const gl = Store.getDataset('GL');
-          const hoursSaved = estimateOpsTimeSaved(gl, EXCEPTIONS_STATE, lastReconResult);
-          const baseline = Number(opsBaselineInput().value || 120);
-          const rate = Number(opsRateInput().value || 100);
-          const roi = Math.max(0, (hoursSaved) * rate);
-          opsMetricsRoot().innerHTML = `<div class="chip">Hours saved (est): ${hoursSaved.toFixed(1)}</div> <div class="chip">Baseline: ${baseline}</div> <div class="chip">ROI/month: $${roi.toFixed(0)}</div>`;
-        }
-
-        // Forecast computation
-        function runForecastCalc(month, scen) {
-          const gl = Store.getDataset('GL').filter(r => (monthOf(r.Date) === month));
-          const bud = Store.getDataset('BUDGET').filter(r => (String(r.Month||'').startsWith(month)));
-          const revenueGL = gl.filter(r => String(r.Account||'').startsWith('4000'));
-          const cogsGL = gl.filter(r => String(r.Account||'').startsWith('5000'));
-          const opexGL = gl.filter(r => String(r.Account||'').startsWith('6000'));
-
-          const actualRev = revenueGL.reduce((a,b)=>a+Number(b.Amount||0),0);
-          const actualCogs = cogsGL.reduce((a,b)=>a+Number(b.Amount||0),0);
-          const actualOpex = opexGL.reduce((a,b)=>a+Number(b.Amount||0),0);
-
-          const fcRev = actualRev * (1 + (Number(scen.revGrowthPct)||0)/100);
-          const fcCogs = -Math.abs(fcRev) * (Number(scen.cogsPct)||0)/100; // negative expense
-
-          // HR/comp driver: apply comp change + headcount deltas as Opex adjustments per dept
-          const hr = Store.getDataset('HR').filter(r => (monthOf(r.Date) === month));
-          const byDeptAvg = new Map();
-          hr.forEach(r => { const k = r.Dept||'Other'; const cost = Number(r.Headcount||0) * Number(r.AvgComp||0) / 12; byDeptAvg.set(k, (byDeptAvg.get(k)||0) + cost); });
-          const hcDeltaCosts = (Number(drvHcSales().value||0) * (byDeptAvg.get('Sales')||120000/12)) +
-                               (Number(drvHcRD().value||0) * (byDeptAvg.get('R&D')||180000/12)) +
-                               (Number(drvHcMkt().value||0) * (byDeptAvg.get('Marketing')||140000/12)) +
-                               (Number(drvHcGA().value||0) * (byDeptAvg.get('G&A')||130000/12));
-          const compAdj = (Number(scen.compPct)||0)/100;
-          const hrAdj = (byDeptAvg.get('Sales')||0 + byDeptAvg.get('R&D')||0 + byDeptAvg.get('Marketing')||0 + byDeptAvg.get('G&A')||0) * compAdj + hcDeltaCosts;
-
-          const fcOpex = actualOpex + hrAdj; // simplified
-
-          const budRev = bud.filter(r => String(r.Account||'').startsWith('4000')).reduce((a,b)=>a+Number(b.Amount||0),0);
-          const budCogs = bud.filter(r => String(r.Account||'').startsWith('5000')).reduce((a,b)=>a+Number(b.Amount||0),0);
-          const budOpex = bud.filter(r => String(r.Account||'').startsWith('6000')).reduce((a,b)=>a+Number(b.Amount||0),0);
-
-          return {
-            actual: { rev: actualRev, cogs: actualCogs, opex: actualOpex, gp: actualRev + actualCogs, opi: actualRev + actualCogs + actualOpex },
-            budget: { rev: budRev, cogs: budCogs, opex: budOpex, gp: budRev + budCogs, opi: budRev + budCogs + budOpex },
-            forecast: { rev: fcRev, cogs: fcCogs, opex: fcOpex, gp: fcRev + fcCogs, opi: fcRev + fcCogs + fcOpex }
-          };
-        }
-
-        function renderForecastSummary(res, month) {
-          const root = forecastSummaryRoot();
-          const fmt0 = (n) => Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-          root.innerHTML = '';
-          
-          // Get current scenario info
-          const currentKey = scenSelect().value;
-          const currentScenario = scenarioCache.get(currentKey) || scenarioDefaults;
-          
-          // Calculate all scenarios for comparison
-          const scenarioResults = {};
-          for (const key of SCEN_KEYS) {
-            let scen = scenarioCache.get(key);
-            // Ensure we have distinct scenario data
-            if (!scen || !scen.name) {
-              const defaults = {
-                A: { name: 'Base Case', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 },
-                B: { name: 'Upside', revGrowthPct: 15, cogsPct: 24, hc: { Sales:3, 'R&D':2, Marketing:1, 'G&A':0 }, compPct: 5 },
-                C: { name: 'Downside', revGrowthPct: -5, cogsPct: 28, hc: { Sales:-2, 'R&D':-1, Marketing:-1, 'G&A':0 }, compPct: -2 }
-              };
-              scen = defaults[key] || { ...scenarioDefaults };
-              scenarioCache.set(key, scen);
-            }
-            scenarioResults[key] = runForecastCalc(month || '2024-03', scen);
-          }
-          
-          // Create comparison table with all scenarios
-          const compareRows = [
-            { 
-              Metric: 'Revenue', 
-              Actual: fmt0(res.actual.rev), 
-              Budget: fmt0(res.budget.rev),
-              'Scenario A': fmt0(scenarioResults.A.forecast.rev),
-              'Scenario B': fmt0(scenarioResults.B.forecast.rev),
-              'Scenario C': fmt0(scenarioResults.C.forecast.rev),
-              'Current': fmt0(res.forecast.rev)
-            },
-            { 
-              Metric: 'COGS', 
-              Actual: fmt0(res.actual.cogs), 
-              Budget: fmt0(res.budget.cogs),
-              'Scenario A': fmt0(scenarioResults.A.forecast.cogs),
-              'Scenario B': fmt0(scenarioResults.B.forecast.cogs),
-              'Scenario C': fmt0(scenarioResults.C.forecast.cogs),
-              'Current': fmt0(res.forecast.cogs)
-            },
-            { 
-              Metric: 'Gross Profit', 
-              Actual: fmt0(res.actual.gp), 
-              Budget: fmt0(res.budget.gp),
-              'Scenario A': fmt0(scenarioResults.A.forecast.gp),
-              'Scenario B': fmt0(scenarioResults.B.forecast.gp),
-              'Scenario C': fmt0(scenarioResults.C.forecast.gp),
-              'Current': fmt0(res.forecast.gp)
-            },
-            { 
-              Metric: 'Opex', 
-              Actual: fmt0(res.actual.opex), 
-              Budget: fmt0(res.budget.opex),
-              'Scenario A': fmt0(scenarioResults.A.forecast.opex),
-              'Scenario B': fmt0(scenarioResults.B.forecast.opex),
-              'Scenario C': fmt0(scenarioResults.C.forecast.opex),
-              'Current': fmt0(res.forecast.opex)
-            },
-            { 
-              Metric: 'Operating Income', 
-              Actual: fmt0(res.actual.opi), 
-              Budget: fmt0(res.budget.opi),
-              'Scenario A': fmt0(scenarioResults.A.forecast.opi),
-              'Scenario B': fmt0(scenarioResults.B.forecast.opi),
-              'Scenario C': fmt0(scenarioResults.C.forecast.opi),
-              'Current': fmt0(res.forecast.opi)
-            }
-          ];
-          
-          // Add header showing current scenario
-          const header = document.createElement('div');
-          header.style.marginBottom = '8px';
-          header.style.fontWeight = 'bold';
-          header.style.color = 'var(--primary)';
-          header.innerHTML = `Scenario Comparison - Current: ${currentKey} "${currentScenario.name || 'Unnamed'}"`;
-          root.appendChild(header);
-          
-          const cols = ['Metric','Actual','Budget','Scenario A','Scenario B','Scenario C','Current'];
-          root.appendChild(createTable(compareRows, cols));
-
-          // Current scenario driver inputs snapshot
-          const inputs = [
-            { Driver: 'Revenue growth %', Value: `${currentScenario.revGrowthPct}%` },
-            { Driver: 'COGS % of revenue', Value: `${currentScenario.cogsPct}%` },
-            { Driver: 'Sales HC Δ', Value: currentScenario.hc.Sales||0 },
-            { Driver: 'R&D HC Δ', Value: currentScenario.hc['R&D']||0 },
-            { Driver: 'Marketing HC Δ', Value: currentScenario.hc.Marketing||0 },
-            { Driver: 'G&A HC Δ', Value: currentScenario.hc['G&A']||0 },
-            { Driver: 'Comp change %', Value: `${currentScenario.compPct}%` }
-          ];
-          const div = document.createElement('div'); 
-          div.style.marginTop = '12px';
-          const driverHeader = document.createElement('div');
-          driverHeader.style.fontWeight = 'bold';
-          driverHeader.style.marginBottom = '4px';
-          driverHeader.textContent = `Current Scenario (${currentKey}) Drivers:`;
-          div.appendChild(driverHeader);
-          div.appendChild(createTable(inputs, ['Driver','Value']));
-          root.appendChild(div);
-        }
-
-        // Wire forecast UI
-        (async function initForecast() {
-          // Set up default scenarios if they don't exist
-          const defaultScenarios = {
-            A: { name: 'Base Case', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 },
-            B: { name: 'Upside', revGrowthPct: 15, cogsPct: 24, hc: { Sales:3, 'R&D':2, Marketing:1, 'G&A':0 }, compPct: 5 },
-            C: { name: 'Downside', revGrowthPct: -5, cogsPct: 28, hc: { Sales:-2, 'R&D':-1, Marketing:-1, 'G&A':0 }, compPct: -2 }
-          };
-          
-          for (const k of SCEN_KEYS) { 
-            const existing = await loadScenario(k);
-            // Always initialize with defaults if scenario is empty or has no meaningful data
-            if (!existing.name || existing.revGrowthPct === scenarioDefaults.revGrowthPct) {
-              await saveScenario(k, defaultScenarios[k]);
-              scenarioCache.set(k, defaultScenarios[k]);
-            }
-          }
-          
-          // Auto-fill period on load
-          const latestMonth = latestMonthFromGL(Store.getDataset('GL')) || '2024-03';
-          if (fcPeriod()) fcPeriod().value = latestMonth;
-          
-          scenSelect().addEventListener('change', async () => {
-            const key = scenSelect().value; const s = await loadScenario(key);
-            scenName().value = s.name || '';
-            drvRevGrowth().value = s.revGrowthPct;
-            drvCogsPct().value = s.cogsPct;
-            drvHcSales().value = s.hc.Sales||0; drvHcRD().value = s.hc['R&D']||0; drvHcMkt().value = s.hc.Marketing||0; drvHcGA().value = s.hc['G&A']||0;
-            drvCompPct().value = s.compPct||0;
-            
-            // Auto-refresh forecast summary when scenario changes
-            const month = fcPeriod().value || latestMonth;
-            if (month) {
-              const res = runForecastCalc(month, s);
-              renderForecastSummary(res, month);
-            }
-          });
-          
-          // Initialize with Scenario A (Base Case)
-          scenSelect().value = 'A';
-          scenSelect().dispatchEvent(new Event('change'));
-
-          function readDriversIntoScenario() {
-            return { name: scenName().value || scenSelect().value,
-              revGrowthPct: Number(drvRevGrowth().value||0), cogsPct: Number(drvCogsPct().value||0),
-              hc: { Sales:Number(drvHcSales().value||0), 'R&D':Number(drvHcRD().value||0), Marketing:Number(drvHcMkt().value||0), 'G&A':Number(drvHcGA().value||0) },
-              compPct: Number(drvCompPct().value||0) };
-          }
-
-          saveScenarioBtn().addEventListener('click', async () => {
-            const key = scenSelect().value;
-            const s = readDriversIntoScenario();
-            await saveScenario(key, s);
-            toast(`Scenario ${key} saved`);
-          });
-
-          // Auto-update scenario when driver inputs change
-          function attachDriverListeners() {
-            const driverInputs = [drvRevGrowth(), drvCogsPct(), drvHcSales(), drvHcRD(), drvHcMkt(), drvHcGA(), drvCompPct(), scenName()];
-            driverInputs.forEach(input => {
-              if (input) {
-                input.addEventListener('input', () => {
-                  // Update current scenario in cache immediately
-                  const key = scenSelect().value;
-                  const updatedScenario = readDriversIntoScenario();
-                  scenarioCache.set(key, updatedScenario);
-                  
-                  // Refresh forecast summary with updated data
-                  const month = fcPeriod().value || '2024-03';
-                  const res = runForecastCalc(month, updatedScenario);
-                  renderForecastSummary(res, month);
-                });
-              }
-            });
-          }
-          attachDriverListeners();
-
-          function doRunForecast() {
-            const key = scenSelect().value; const s = readDriversIntoScenario();
-            let month = (fcPeriod().value || anPeriodInput.value || '').slice(0,7);
-            // Ensure a valid month exists; if not, default to latest GL month
-            if (!/^\d{4}-\d{2}$/.test(month)) {
-              const latest = latestMonthFromGL(Store.getDataset('GL'));
-              if (latest) { month = latest; const el = fcPeriod(); if (el) el.value = latest; }
-            }
-            if (!month) { toast('Set forecast period YYYY-MM'); return; }
-            busyOverlay.show('Forecasting...');
-            requestAnimationFrame(() => {
-              try {
-                const res = runForecastCalc(month, s);
-                // Always render summary; zeros will appear if no data present
-                renderForecastSummary(res, month);
-                renderOpsMetrics();
-                scenarioCache.set(key, s);
-                addDecision(`Forecast run for ${month}: Rev +${s.revGrowthPct}% | COGS ${s.cogsPct}% | HC Δ S:${s.hc.Sales} R:${s.hc['R&D']} M:${s.hc.Marketing} G:${s.hc['G&A']} | Comp ${s.compPct}%`);
-              } finally { busyOverlay.hide(); }
-            });
-          }
-          const rfBtnEl = runForecastBtn();
-          if (rfBtnEl) rfBtnEl.addEventListener('click', doRunForecast);
-          // Defensive: delegate in case the button is re-rendered by the browser/UI
-          document.addEventListener('click', (e) => { const t = e.target; if (t && t.id === 'runForecast') { e.preventDefault(); doRunForecast(); } });
-
-          opsBaselineInput().addEventListener('input', renderOpsMetrics);
-          opsRateInput().addEventListener('input', renderOpsMetrics);
-          qs('#opsRows').addEventListener('input', renderOpsMetrics);
-          qs('#opsResolved').addEventListener('input', renderOpsMetrics);
-          qs('#opsAutoTieouts').addEventListener('input', renderOpsMetrics);
-
-          // What-if presets
-          const wiUpside = document.getElementById('wiUpside');
-          const wiDownside = document.getElementById('wiDownside');
-          const wiEfficiency = document.getElementById('wiEfficiency');
-          if (wiUpside) wiUpside.addEventListener('click', () => { drvRevGrowth().value = 10; drvCogsPct().value = 24; drvHcSales().value = Number(drvHcSales().value||0) + 3; doRunForecast(); });
-          if (wiDownside) wiDownside.addEventListener('click', () => { drvRevGrowth().value = -5; drvCogsPct().value = 28; drvHcSales().value = Math.max(0, Number(drvHcSales().value||0) - 2); doRunForecast(); });
-          if (wiEfficiency) wiEfficiency.addEventListener('click', () => { drvCogsPct().value = Math.max(0, Number(drvCogsPct().value||0) - 3); drvHcSales().value = Number(drvHcSales().value||0) + 2; drvHcMkt().value = Math.max(0, Number(drvHcMkt().value||0) - 1); doRunForecast(); });
-        })();
-        // Busy overlay helpers
-        const busyOverlay = (() => {
-          const el = document.createElement('div');
-          el.className = 'busy-overlay';
-          el.innerHTML = '<div class="busy-box"><div class="spinner"></div><div id="busyText">Working...</div></div>';
-          document.body.appendChild(el);
-          return {
-            show: (text) => { (el.querySelector('#busyText')||{}).textContent = text || 'Working...'; el.style.display = 'flex'; },
-            hide: () => { el.style.display = 'none'; }
-          };
-        })();
-
-        // Chart rendering with fallback
-        function renderCharts(canvas1, canvas2, labels, seriesA, seriesB) {
-          const hasChartJS = !!(window.Chart && window.Chart.defaults);
-          if (hasChartJS) {
-            try {
-              new Chart(canvas1.getContext('2d'), { type: 'bar', data: { labels, datasets: [{ label: 'Variance', data: seriesA, backgroundColor: '#60a5fa' }] }, options: { responsive: true, maintainAspectRatio: false } });
-              new Chart(canvas2.getContext('2d'), { type: 'line', data: { labels, datasets: [{ label: 'Trend', data: seriesB, borderColor: '#34d399', fill: false }] }, options: { responsive: true, maintainAspectRatio: false } });
-              return;
-            } catch {}
-          }
-          // Fallback drawing
-          const drawBars = (ctx, data) => {
-            const w = ctx.canvas.width, h = ctx.canvas.height; const pad = 24; const n = data.length || 1; const max = Math.max(1, Math.max(...data.map(v => Math.abs(Number(v)||0))));
-            const barW = (w - pad*2) / n * 0.7; const baseY = h - pad;
-            const step = (w - pad*2) / n;
-            ctx.clearRect(0,0,w,h); ctx.strokeStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(pad, baseY); ctx.lineTo(w-pad, baseY); ctx.stroke();
-            data.forEach((v,i) => { const val = Number(v)||0; const bh = (Math.abs(val)/max) * (h - pad*2); const x = pad + i*step + (step-barW)/2; const y = baseY - bh; ctx.fillStyle = val>=0 ? '#60a5fa' : '#f87171'; ctx.fillRect(x, y, barW, bh); });
-          };
-          const drawLine = (ctx, data) => {
-            const w = ctx.canvas.width, h = ctx.canvas.height; const pad = 24; const n = data.length || 1; const max = Math.max(...data.map(v => Number(v)||0)); const min = Math.min(...data.map(v => Number(v)||0));
-            const range = (max - min) || 1; const stepX = (w - pad*2) / Math.max(1,n-1);
-            ctx.clearRect(0,0,w,h); ctx.strokeStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(pad, h - pad); ctx.lineTo(w-pad, h - pad); ctx.stroke();
-            ctx.strokeStyle = '#34d399'; ctx.beginPath();
-            data.forEach((v,i) => { const val = Number(v)||0; const x = pad + i*stepX; const y = h - pad - ((val - min)/range)*(h - pad*2); if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
-            ctx.stroke();
-          };
-          drawBars(canvas1.getContext('2d'), seriesA);
-          drawLine(canvas2.getContext('2d'), seriesB);
-        }
-
-        // Analysis computations
-        function groupBy(arr, keyFn, aggFn) {
-          const map = new Map();
-          for (const r of arr) {
-            const k = keyFn(r);
-            map.set(k, aggFn(map.get(k), r));
-          }
-          return Array.from(map, ([k,v]) => ({ key: k, value: v }));
-        }
-        function sumAgg(prev, r) { return (prev||0) + (Number(r.Amount)||0); }
-        function monthOf(dateStr) { const d = new Date(dateStr); if (isNaN(+d)) return ''; return d.toISOString().slice(0,7); }
-        function filterPeriodLike(gl, mode, pivotMonth) {
-          // Returns current and prior period arrays
-          const cur = gl.filter(r => monthOf(r.Date) === pivotMonth);
-          const d = new Date(pivotMonth + '-01T00:00:00Z');
-          let prior;
-          if (mode === 'MoM') { const p = new Date(d); p.setMonth(p.getMonth()-1); prior = gl.filter(r => monthOf(r.Date) === p.toISOString().slice(0,7)); }
-          else if (mode === 'QoQ') { const p = new Date(d); p.setMonth(p.getMonth()-3); prior = gl.filter(r => monthOf(r.Date) === p.toISOString().slice(0,7)); }
-          else { const p = new Date(d); p.setFullYear(p.getFullYear()-1); prior = gl.filter(r => monthOf(r.Date) === p.toISOString().slice(0,7)); }
-          return { cur, prior };
-        }
-        function buildVariance(level, path, actualRows, benchRows) {
-          const dim = level === 'Account' ? (r)=>r.Account : level === 'Dept' ? (r)=>r.Dept : (r)=>r.Product;
-          const a = groupBy(actualRows, dim, sumAgg);
-          const b = groupBy(benchRows, dim, (prev, r) => (prev||0) + (Number(r.Amount||r.BookedAmount||0)));
-          const index = new Map(b.map(x => [x.key, x.value]));
-          return a.map(x => ({ key: x.key || '(blank)', actual: x.value||0, bench: index.get(x.key)||0, variance: (x.value||0) - (index.get(x.key)||0) })).sort((x,y)=>Math.abs(y.variance)-Math.abs(x.variance));
-        }
-
-        const runAnalysisBtn = qs('#runAnalysis');
-        const compareModeSel = qs('#compareMode');
-        const benchModeSel = qs('#benchMode');
-        const anPeriodInput = qs('#anPeriod');
-        const anPrevBtn = qs('#anPrev');
-        const anNextBtn = qs('#anNext');
-        const varianceTableRoot = qs('#varianceTable');
-        const crumbLevel = qs('#crumb-level');
-        const crumbPath = qs('#crumb-path');
-        const drillUpBtn = qs('#drillUp');
-
-        let drill = { level: 'Account', path: [] };
-
-        function setDrill(level, path) {
-          drill.level = level; drill.path = path.slice();
-          crumbLevel.textContent = level;
-          crumbPath.textContent = path.join(' → ');
-        }
-
-        function filterByDrill(rows) {
-          let out = rows.slice();
-          if (drill.path[0]) out = out.filter(r => (r.Account||'') === drill.path[0]);
-          if (drill.path[1]) out = out.filter(r => (r.Dept||'') === drill.path[1]);
-          return out;
-        }
-
-        function latestMonthFromGL(gl) {
-          const months = Array.from(new Set(gl.map(r => monthOf(r.Date)).filter(Boolean))).sort();
-          return months[months.length - 1] || '';
-        }
-
-        runAnalysisBtn.addEventListener('click', () => {
-          const mode = compareModeSel.value; const bench = benchModeSel.value; let month = (anPeriodInput.value || '').trim();
-          const glAll = Store.getDataset('GL');
-          if (!month) { month = latestMonthFromGL(glAll); anPeriodInput.value = month; }
-          if (!month || !/^\d{4}-\d{2}$/.test(month)) { toast('Enter period as YYYY-MM'); return; }
-          if (!glAll.length) { toast('No GL data available. Load Demo or import data.'); return; }
-          busyOverlay.show('Analyzing...');
-          requestAnimationFrame(() => {
-            try {
-              const bud = bench === 'BUDGET' ? Store.getDataset('BUDGET') : Store.getDataset('BUDGET'); // placeholder until Forecast exists
-              const { cur } = filterPeriodLike(glAll, mode, month);
-              const benchRows = bud.filter(r => (r.Month || '').startsWith(month));
-              const curFiltered = filterByDrill(cur);
-              const rows = buildVariance(drill.level, drill.path, curFiltered, benchRows);
-              renderVarianceTable(rows);
-              const labels = rows.slice(0,10).map(r => r.key);
-              const variances = rows.slice(0,10).map(r => r.variance);
-              const trend = rows.slice(0,10).map(r => r.actual);
-              const c1 = document.getElementById('chart1'); const c2 = document.getElementById('chart2');
-              if (!labels.length) {
-                const msg = document.createElement('div'); msg.className = 'notice'; msg.textContent = 'No data for selected period.';
-                varianceTableRoot.innerHTML = ''; varianceTableRoot.appendChild(msg);
-                const ctx1 = c1.getContext('2d'); const ctx2 = c2.getContext('2d');
-                ctx1 && ctx1.clearRect(0,0,c1.width,c1.height); ctx2 && ctx2.clearRect(0,0,c2.width,c2.height);
-              } else {
-                renderCharts(c1, c2, labels, variances, trend);
-              }
-            } finally {
-              busyOverlay.hide();
-            }
-          });
-        });
-
-        function stepMonth(month, delta) {
-          if (!/^\d{4}-\d{2}$/.test(month)) return month;
-          const d = new Date(month + '-01T00:00:00Z');
-          d.setMonth(d.getMonth()+delta);
-          return d.toISOString().slice(0,7);
-        }
-        anPrevBtn.addEventListener('click', ()=>{ const m = (anPeriodInput.value||'').slice(0,7); if (m) { anPeriodInput.value = stepMonth(m, -1); } runAnalysisBtn.click(); });
-        anNextBtn.addEventListener('click', ()=>{ const m = (anPeriodInput.value||'').slice(0,7); if (m) { anPeriodInput.value = stepMonth(m, +1); } runAnalysisBtn.click(); });
-
-        drillUpBtn.addEventListener('click', () => {
-          if (drill.level === 'Product' && drill.path.length >= 2) { setDrill('Dept', drill.path.slice(0,1)); }
-          else if (drill.level === 'Dept' && drill.path.length >= 1) { setDrill('Account', []); }
-          else { setDrill('Account', []); }
-          runAnalysisBtn.click();
-        });
-
-        function renderVarianceTable(rows) {
-          varianceTableRoot.innerHTML = '';
-          const table = document.createElement('table'); table.className = 'data-table';
-          const cols = ['Key','Actual','Benchmark','Variance'];
-          const head = document.createElement('thead'); const hr = document.createElement('tr'); cols.forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); }); head.appendChild(hr); table.appendChild(head);
-          const body = document.createElement('tbody');
-          rows.forEach(r => {
-            const tr = document.createElement('tr');
-            const cells = [r.key, r.actual.toFixed(2), r.bench.toFixed(2), r.variance.toFixed(2)];
-            cells.forEach((v,i) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
-            tr.style.cursor = 'pointer';
-            tr.addEventListener('click', () => {
-              if (drill.level === 'Account') setDrill('Dept', [r.key]);
-              else if (drill.level === 'Dept') setDrill('Product', [drill.path[0], r.key]);
-              runAnalysisBtn.click();
-            });
-            body.appendChild(tr);
-          });
-          table.appendChild(body);
-          varianceTableRoot.appendChild(table);
-        }
-
-        // Persistence: Dexie if available; otherwise in-memory Map
-        const DB = (function() {
-          const hasDexie = typeof window.Dexie === 'function';
-          if (hasDexie) {
-            const db = new Dexie('fpa_close_studio');
-            db.version(1).stores({
-              datasets: '&name', // name -> rows JSON
-              snapshots: '++id,timestamp,summary',
-              audit: '++id,timestamp,action,entity',
-              decisions: '++id,timestamp,text'
-            });
-            return db;
-          }
-          // Minimal shim
-          const mem = { datasets: new Map(), snapshots: [], audit: [], decisions: [] };
-          return {
-            datasets: {
-              put: async (obj) => { mem.datasets.set(obj.name, obj.rows); },
-              get: async (name) => ({ name, rows: mem.datasets.get(name) || [] }),
-              toArray: async () => Array.from(mem.datasets, ([name, rows]) => ({ name, rows }))
-            },
-            snapshots: { add: async (obj) => { obj.id = mem.snapshots.length+1; mem.snapshots.push(obj); return obj.id; }, toArray: async () => mem.snapshots.slice() },
-            audit: { add: async (obj) => { obj.id = mem.audit.length+1; mem.audit.push(obj); return obj.id; }, toArray: async () => mem.audit.slice() },
-            decisions: { add: async (obj) => { obj.id = mem.decisions.length+1; mem.decisions.push(obj); return obj.id; }, toArray: async () => mem.decisions.slice() }
-          };
-        })();
-
-        const Store = (() => {
-          const cache = new Map();
-          async function load(name) {
-            const rec = await DB.datasets.get(name);
-            const rows = rec && rec.rows ? rec.rows : [];
-            cache.set(name, rows.slice());
-            return rows;
-          }
-          async function persist(name) {
-            await DB.datasets.put({ name, rows: cache.get(name) || [] });
-          }
-          return {
-            ensure: async (name) => { if (!cache.has(name)) await load(name); return cache.get(name) || []; },
-            putDataset: async (name, rows) => { cache.set(name, Array.isArray(rows) ? rows.slice() : []); await persist(name); await snapshot(`Put dataset ${name}`, { [name]: rows }); },
-            getDataset: (name) => cache.get(name) || [],
-            list: () => Array.from(cache.keys()),
-            clear: async () => { cache.clear(); await DB.snapshots.add({ timestamp: Date.now(), summary: 'Clear workspace' }); },
-            updateRow: async (name, index, updater) => {
-              const arr = cache.get(name) || [];
-              if (index < 0 || index >= arr.length) return;
-              const before = JSON.stringify(arr[index]);
-              const next = updater({ ...arr[index] });
-              arr[index] = next;
-              cache.set(name, arr);
-              await persist(name);
-              await audit('update', `${name}[${index}]`, before, JSON.stringify(next));
-            },
-            removeRows: async (name, indices) => {
-              const arr = cache.get(name) || [];
-              const before = JSON.stringify(arr);
-              const keep = arr.filter((_, idx) => !indices.includes(idx));
-              cache.set(name, keep);
-              await persist(name);
-              await audit('remove', `${name}`, hash(before), hash(JSON.stringify(keep)));
-            },
-            appendRows: async (name, rows) => {
-              const arr = cache.get(name) || [];
-              const before = JSON.stringify(arr);
-              const next = arr.concat(rows);
-              cache.set(name, next);
-              await persist(name);
-              await snapshot(`Append ${rows.length} rows to ${name}`, { [name]: rows });
-              await audit('append', `${name}`, hash(before), hash(JSON.stringify(next)));
-            }
-          };
-        })();
-
-        // Demo datasets (20–50 rows each)
-        const DEMO_GL = [
-          { Date: '2024-01-31', Account: '4000 Revenue', Subaccount: 'Software', Dept: 'Sales', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: 125000, Memo: 'Jan subscriptions', DocumentID: 'GL-2024-0001', 'Debit/Credit': 'C' },
-          { Date: '2024-01-31', Account: '5000 COGS', Subaccount: 'Hosting', Dept: 'Ops', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -32000, Memo: 'Infra costs', DocumentID: 'GL-2024-0002', 'Debit/Credit': 'D' },
-          { Date: '2024-01-31', Account: '6000 Opex', Subaccount: 'Sales', Dept: 'Sales', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -42000, Memo: 'Sales compensation', DocumentID: 'GL-2024-0003', 'Debit/Credit': 'D' },
-          { Date: '2024-01-31', Account: '6000 Opex', Subaccount: 'Marketing', Dept: 'Marketing', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -18000, Memo: 'Campaigns', DocumentID: 'GL-2024-0004', 'Debit/Credit': 'D' },
-          { Date: '2024-01-31', Account: '6000 Opex', Subaccount: 'R&D', Dept: 'R&D', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -68000, Memo: 'Engineering payroll', DocumentID: 'GL-2024-0005', 'Debit/Credit': 'D' },
-          { Date: '2024-01-31', Account: '4000 Revenue', Subaccount: 'Services', Dept: 'Services', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', Amount: 23000, Memo: 'Implementation fees', DocumentID: 'GL-2024-0006', 'Debit/Credit': 'C' },
-          { Date: '2024-01-31', Account: '5000 COGS', Subaccount: 'PS Labor', Dept: 'Services', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', Amount: -12000, Memo: 'Consulting payroll', DocumentID: 'GL-2024-0007', 'Debit/Credit': 'D' },
-          { Date: '2024-02-29', Account: '4000 Revenue', Subaccount: 'Software', Dept: 'Sales', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: 132500, Memo: 'Feb subscriptions', DocumentID: 'GL-2024-0101', 'Debit/Credit': 'C' },
-          { Date: '2024-02-29', Account: '5000 COGS', Subaccount: 'Hosting', Dept: 'Ops', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -33500, Memo: 'Infra costs', DocumentID: 'GL-2024-0102', 'Debit/Credit': 'D' },
-          { Date: '2024-02-29', Account: '6000 Opex', Subaccount: 'Sales', Dept: 'Sales', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -43000, Memo: 'Sales compensation', DocumentID: 'GL-2024-0103', 'Debit/Credit': 'D' },
-          { Date: '2024-02-29', Account: '6000 Opex', Subaccount: 'Marketing', Dept: 'Marketing', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -15000, Memo: 'Events', DocumentID: 'GL-2024-0104', 'Debit/Credit': 'D' },
-          { Date: '2024-02-29', Account: '6000 Opex', Subaccount: 'R&D', Dept: 'R&D', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -69500, Memo: 'Engineering payroll', DocumentID: 'GL-2024-0105', 'Debit/Credit': 'D' },
-          { Date: '2024-02-29', Account: '4000 Revenue', Subaccount: 'Services', Dept: 'Services', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', Amount: 24500, Memo: 'Implementation fees', DocumentID: 'GL-2024-0106', 'Debit/Credit': 'C' },
-          { Date: '2024-02-29', Account: '5000 COGS', Subaccount: 'PS Labor', Dept: 'Services', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', Amount: -12500, Memo: 'Consulting payroll', DocumentID: 'GL-2024-0107', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '4000 Revenue', Subaccount: 'Software', Dept: 'Sales', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: 140200, Memo: 'Mar subscriptions', DocumentID: 'GL-2024-0201', 'Debit/Credit': 'C' },
-          { Date: '2024-03-31', Account: '5000 COGS', Subaccount: 'Hosting', Dept: 'Ops', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -34200, Memo: 'Infra costs', DocumentID: 'GL-2024-0202', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '6000 Opex', Subaccount: 'Sales', Dept: 'Sales', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -44500, Memo: 'Sales compensation', DocumentID: 'GL-2024-0203', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '6000 Opex', Subaccount: 'Marketing', Dept: 'Marketing', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -16000, Memo: 'Brand', DocumentID: 'GL-2024-0204', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '6000 Opex', Subaccount: 'R&D', Dept: 'R&D', Product: 'Cloud', Region: 'NA', Currency: 'USD', Amount: -71000, Memo: 'Engineering payroll', DocumentID: 'GL-2024-0205', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '4000 Revenue', Subaccount: 'Services', Dept: 'Services', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', Amount: 26000, Memo: 'Implementation fees', DocumentID: 'GL-2024-0206', 'Debit/Credit': 'C' },
-          { Date: '2024-03-31', Account: '5000 COGS', Subaccount: 'PS Labor', Dept: 'Services', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', Amount: -13000, Memo: 'Consulting payroll', DocumentID: 'GL-2024-0207', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '6100 Opex', Subaccount: 'G&A', Dept: 'G&A', Product: 'Corp', Region: 'NA', Currency: 'USD', Amount: -22000, Memo: 'Admin expenses', DocumentID: 'GL-2024-0208', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '6100 Opex', Subaccount: 'G&A', Dept: 'G&A', Product: 'Corp', Region: 'EMEA', Currency: 'EUR', Amount: -9000, Memo: 'EU admin', DocumentID: 'GL-2024-0209', 'Debit/Credit': 'D' },
-          { Date: '2024-03-31', Account: '4800 Other Income', Subaccount: 'Interest', Dept: 'Corp', Product: 'Corp', Region: 'NA', Currency: 'USD', Amount: 1200, Memo: 'Bank interest', DocumentID: 'GL-2024-0210', 'Debit/Credit': 'C' },
-          { Date: '2024-03-31', Account: '5700 FX', Subaccount: 'Gains/Losses', Dept: 'Corp', Product: 'Corp', Region: 'EMEA', Currency: 'EUR', Amount: -800, Memo: 'FX loss', DocumentID: 'GL-2024-0211', 'Debit/Credit': 'D' }
-        ];
-
-        const DEMO_CRM = [
-          { Date: '2024-01-10', Product: 'Cloud', Region: 'NA', Currency: 'USD', BookedAmount: 45000, DocumentID: 'CRM-2024-0001' },
-          { Date: '2024-01-22', Product: 'Cloud', Region: 'EMEA', Currency: 'EUR', BookedAmount: 18000, DocumentID: 'CRM-2024-0002' },
-          { Date: '2024-01-28', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', BookedAmount: 12000, DocumentID: 'CRM-2024-0003' },
-          { Date: '2024-02-05', Product: 'Cloud', Region: 'NA', Currency: 'USD', BookedAmount: 52000, DocumentID: 'CRM-2024-0101' },
-          { Date: '2024-02-15', Product: 'Cloud', Region: 'APAC', Currency: 'USD', BookedAmount: 21000, DocumentID: 'CRM-2024-0102' },
-          { Date: '2024-02-25', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', BookedAmount: 13500, DocumentID: 'CRM-2024-0103' },
-          { Date: '2024-03-03', Product: 'Cloud', Region: 'NA', Currency: 'USD', BookedAmount: 61000, DocumentID: 'CRM-2024-0201' },
-          { Date: '2024-03-12', Product: 'Cloud', Region: 'EMEA', Currency: 'EUR', BookedAmount: 22000, DocumentID: 'CRM-2024-0202' },
-          { Date: '2024-03-20', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', BookedAmount: 14500, DocumentID: 'CRM-2024-0203' },
-          { Date: '2024-03-28', Product: 'Cloud', Region: 'APAC', Currency: 'USD', BookedAmount: 19000, DocumentID: 'CRM-2024-0204' },
-          { Date: '2024-04-04', Product: 'Cloud', Region: 'NA', Currency: 'USD', BookedAmount: 64000, DocumentID: 'CRM-2024-0301' },
-          { Date: '2024-04-10', Product: 'Cloud', Region: 'EMEA', Currency: 'EUR', BookedAmount: 23000, DocumentID: 'CRM-2024-0302' },
-          { Date: '2024-04-18', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', BookedAmount: 15000, DocumentID: 'CRM-2024-0303' },
-          { Date: '2024-04-26', Product: 'Cloud', Region: 'APAC', Currency: 'USD', BookedAmount: 21500, DocumentID: 'CRM-2024-0304' },
-          { Date: '2024-05-06', Product: 'Cloud', Region: 'NA', Currency: 'USD', BookedAmount: 70000, DocumentID: 'CRM-2024-0401' },
-          { Date: '2024-05-14', Product: 'Cloud', Region: 'EMEA', Currency: 'EUR', BookedAmount: 26000, DocumentID: 'CRM-2024-0402' },
-          { Date: '2024-05-21', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', BookedAmount: 15500, DocumentID: 'CRM-2024-0403' },
-          { Date: '2024-05-29', Product: 'Cloud', Region: 'APAC', Currency: 'USD', BookedAmount: 23000, DocumentID: 'CRM-2024-0404' },
-          { Date: '2024-06-07', Product: 'Cloud', Region: 'NA', Currency: 'USD', BookedAmount: 72000, DocumentID: 'CRM-2024-0501' },
-          { Date: '2024-06-15', Product: 'Cloud', Region: 'EMEA', Currency: 'EUR', BookedAmount: 27000, DocumentID: 'CRM-2024-0502' },
-          { Date: '2024-06-20', Product: 'ProServ', Region: 'EMEA', Currency: 'EUR', BookedAmount: 16000, DocumentID: 'CRM-2024-0503' },
-          { Date: '2024-06-28', Product: 'Cloud', Region: 'APAC', Currency: 'USD', BookedAmount: 24000, DocumentID: 'CRM-2024-0504' }
-        ];
-
-        const DEMO_HR = [
-          { Date: '2024-01-31', Dept: 'R&D', Headcount: 24, AvgComp: 145000, Currency: 'USD', DocumentID: 'HR-2024-0001' },
-          { Date: '2024-01-31', Dept: 'Sales', Headcount: 12, AvgComp: 130000, Currency: 'USD', DocumentID: 'HR-2024-0002' },
-          { Date: '2024-01-31', Dept: 'Marketing', Headcount: 8, AvgComp: 115000, Currency: 'USD', DocumentID: 'HR-2024-0003' },
-          { Date: '2024-01-31', Dept: 'G&A', Headcount: 7, AvgComp: 110000, Currency: 'USD', DocumentID: 'HR-2024-0004' },
-          { Date: '2024-02-29', Dept: 'R&D', Headcount: 25, AvgComp: 146000, Currency: 'USD', DocumentID: 'HR-2024-0101' },
-          { Date: '2024-02-29', Dept: 'Sales', Headcount: 13, AvgComp: 131000, Currency: 'USD', DocumentID: 'HR-2024-0102' },
-          { Date: '2024-02-29', Dept: 'Marketing', Headcount: 8, AvgComp: 116000, Currency: 'USD', DocumentID: 'HR-2024-0103' },
-          { Date: '2024-02-29', Dept: 'G&A', Headcount: 7, AvgComp: 110500, Currency: 'USD', DocumentID: 'HR-2024-0104' },
-          { Date: '2024-03-31', Dept: 'R&D', Headcount: 26, AvgComp: 147000, Currency: 'USD', DocumentID: 'HR-2024-0201' },
-          { Date: '2024-03-31', Dept: 'Sales', Headcount: 14, AvgComp: 132000, Currency: 'USD', DocumentID: 'HR-2024-0202' },
-          { Date: '2024-03-31', Dept: 'Marketing', Headcount: 9, AvgComp: 117000, Currency: 'USD', DocumentID: 'HR-2024-0203' },
-          { Date: '2024-03-31', Dept: 'G&A', Headcount: 7, AvgComp: 111000, Currency: 'USD', DocumentID: 'HR-2024-0204' },
-          { Date: '2024-04-30', Dept: 'R&D', Headcount: 27, AvgComp: 148000, Currency: 'USD', DocumentID: 'HR-2024-0301' },
-          { Date: '2024-04-30', Dept: 'Sales', Headcount: 15, AvgComp: 133000, Currency: 'USD', DocumentID: 'HR-2024-0302' },
-          { Date: '2024-04-30', Dept: 'Marketing', Headcount: 9, AvgComp: 118000, Currency: 'USD', DocumentID: 'HR-2024-0303' },
-          { Date: '2024-04-30', Dept: 'G&A', Headcount: 8, AvgComp: 112000, Currency: 'USD', DocumentID: 'HR-2024-0304' },
-          { Date: '2024-05-31', Dept: 'R&D', Headcount: 28, AvgComp: 149000, Currency: 'USD', DocumentID: 'HR-2024-0401' },
-          { Date: '2024-05-31', Dept: 'Sales', Headcount: 15, AvgComp: 134000, Currency: 'USD', DocumentID: 'HR-2024-0402' },
-          { Date: '2024-05-31', Dept: 'Marketing', Headcount: 10, AvgComp: 119000, Currency: 'USD', DocumentID: 'HR-2024-0403' },
-          { Date: '2024-05-31', Dept: 'G&A', Headcount: 8, AvgComp: 112500, Currency: 'USD', DocumentID: 'HR-2024-0404' }
-        ];
-
-        const DEMO_BUDGET = [
-          { Month: '2024-01', Account: '4000 Revenue', Dept: 'Sales', Product: 'Cloud', Amount: 120000, Currency: 'USD' },
-          { Month: '2024-01', Account: '5000 COGS', Dept: 'Ops', Product: 'Cloud', Amount: -30000, Currency: 'USD' },
-          { Month: '2024-01', Account: '6000 Opex', Dept: 'Sales', Product: 'Cloud', Amount: -40000, Currency: 'USD' },
-          { Month: '2024-01', Account: '6000 Opex', Dept: 'R&D', Product: 'Cloud', Amount: -67000, Currency: 'USD' },
-          { Month: '2024-01', Account: '6000 Opex', Dept: 'Marketing', Product: 'Cloud', Amount: -20000, Currency: 'USD' },
-          { Month: '2024-02', Account: '4000 Revenue', Dept: 'Sales', Product: 'Cloud', Amount: 128000, Currency: 'USD' },
-          { Month: '2024-02', Account: '5000 COGS', Dept: 'Ops', Product: 'Cloud', Amount: -31500, Currency: 'USD' },
-          { Month: '2024-02', Account: '6000 Opex', Dept: 'Sales', Product: 'Cloud', Amount: -41000, Currency: 'USD' },
-          { Month: '2024-02', Account: '6000 Opex', Dept: 'R&D', Product: 'Cloud', Amount: -68000, Currency: 'USD' },
-          { Month: '2024-02', Account: '6000 Opex', Dept: 'Marketing', Product: 'Cloud', Amount: -17000, Currency: 'USD' },
-          { Month: '2024-03', Account: '4000 Revenue', Dept: 'Sales', Product: 'Cloud', Amount: 136000, Currency: 'USD' },
-          { Month: '2024-03', Account: '5000 COGS', Dept: 'Ops', Product: 'Cloud', Amount: -33000, Currency: 'USD' },
-          { Month: '2024-03', Account: '6000 Opex', Dept: 'Sales', Product: 'Cloud', Amount: -43000, Currency: 'USD' },
-          { Month: '2024-03', Account: '6000 Opex', Dept: 'R&D', Product: 'Cloud', Amount: -70000, Currency: 'USD' },
-          { Month: '2024-03', Account: '6000 Opex', Dept: 'Marketing', Product: 'Cloud', Amount: -16000, Currency: 'USD' },
-          { Month: '2024-03', Account: '6100 Opex', Dept: 'G&A', Product: 'Corp', Amount: -21000, Currency: 'USD' },
-          { Month: '2024-03', Account: '4800 Other Income', Dept: 'Corp', Product: 'Corp', Amount: 1000, Currency: 'USD' },
-          { Month: '2024-04', Account: '4000 Revenue', Dept: 'Sales', Product: 'Cloud', Amount: 140000, Currency: 'USD' },
-          { Month: '2024-04', Account: '5000 COGS', Dept: 'Ops', Product: 'Cloud', Amount: -33500, Currency: 'USD' },
-          { Month: '2024-04', Account: '6000 Opex', Dept: 'Sales', Product: 'Cloud', Amount: -44000, Currency: 'USD' },
-          { Month: '2024-04', Account: '6000 Opex', Dept: 'R&D', Product: 'Cloud', Amount: -71000, Currency: 'USD' },
-          { Month: '2024-04', Account: '6000 Opex', Dept: 'Marketing', Product: 'Cloud', Amount: -18000, Currency: 'USD' },
-          { Month: '2024-04', Account: '6100 Opex', Dept: 'G&A', Product: 'Corp', Amount: -21500, Currency: 'USD' }
-        ];
-
-        // Theme
-        const themeBtn = qs('#themeBtn');
-        const savedTheme = localStorage.getItem('fps-theme');
-        if (savedTheme === 'dark' || savedTheme === 'light') {
-          document.documentElement.setAttribute('data-theme', savedTheme);
-        }
-        themeBtn.addEventListener('click', () => {
-          const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', next);
-          localStorage.setItem('fps-theme', next);
-        });
-
-        // Nav / views
-        const views = ['ingest','validate','analyze','forecast','report','audit'];
-        function activate(view) {
-          views.forEach(v => {
-            const isActive = v === view;
-            qs(`#view-${v}`).classList.toggle('active', isActive);
-            qsa(`.nav-link[data-view="${v}"]`).forEach(btn => btn.classList.toggle('active', isActive));
-          });
-          history.replaceState({}, '', `#${view}`);
-        }
-        qsa('.nav-link').forEach(btn => btn.addEventListener('click', (e) => activate(e.currentTarget.getAttribute('data-view'))));
-        if (location.hash) {
-          const initial = location.hash.replace('#','');
-          if (views.includes(initial)) activate(initial);
-        }
-
-        // Help toggle
-        const helpPanel = qs('#helpPanel');
-        const helpBody = qs('#helpBody');
-        const helpToggle = qs('#toggleHelp');
-        helpToggle.addEventListener('click', () => {
-          const hidden = helpBody.style.display === 'none';
-          helpBody.style.display = hidden ? '' : 'none';
-          helpToggle.textContent = hidden ? 'Hide' : 'Show';
-          helpToggle.setAttribute('aria-expanded', String(hidden));
-        });
-
-        // Decision log (ephemeral for now)
-        const decisionForm = qs('#decisionForm');
-        const decisionInput = qs('#decisionInput');
-        const decisionList = qs('#decisionList');
-        decisionForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const text = (decisionInput.value || '').trim();
-          if (!text) return;
-          const li = document.createElement('li');
-          li.className = 'decision-item';
-          const time = new Date().toLocaleString();
-          li.textContent = `${text} — ${time}`;
-          decisionList.prepend(li);
-          decisionInput.value = '';
-        });
-
-        // Data preview rendering
-        const previewRoot = qs('#dataPreview');
-        function createTable(rows, columns) {
-          const table = document.createElement('table');
-          table.className = 'data-table';
-          const thead = document.createElement('thead');
-          const thr = document.createElement('tr');
-          columns.forEach(col => {
-            const th = document.createElement('th'); th.textContent = col; thr.appendChild(th);
-          });
-          thead.appendChild(thr);
-          const tbody = document.createElement('tbody');
-          rows.forEach(r => {
-            const tr = document.createElement('tr');
-            columns.forEach(col => {
-              const td = document.createElement('td');
-              const val = r[col];
-              td.textContent = val == null ? '' : String(val);
-              tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-          });
-          table.appendChild(thead); table.appendChild(tbody);
-          return table;
-        }
-
-        function renderDatasetCard(title, key, rows, columns) {
-          const card = document.createElement('div'); card.className = 'dataset-card';
-          const head = document.createElement('div'); head.className = 'dataset-header';
-          const left = document.createElement('div'); left.innerHTML = `<strong>${title}</strong> <span style="color:var(--muted);font-size:12px">(${rows.length} rows)</span>`;
-          const right = document.createElement('div');
-          const hideBtn = document.createElement('button'); hideBtn.className = 'button ghost'; hideBtn.textContent = 'Collapse';
-          right.appendChild(hideBtn);
-          head.appendChild(left); head.appendChild(right);
-          const body = document.createElement('div'); body.className = 'dataset-body';
-          body.appendChild(createTable(rows, columns));
-          hideBtn.addEventListener('click', () => {
-            const hidden = body.style.display === 'none';
-            body.style.display = hidden ? '' : 'none';
-            hideBtn.textContent = hidden ? 'Collapse' : 'Expand';
-          });
-          card.appendChild(head); card.appendChild(body);
-          return card;
-        }
-
-        function renderDataPreview() {
-          if (!previewRoot) return;
-          previewRoot.innerHTML = '';
-          const gl = Store.getDataset('GL');
-          const crm = Store.getDataset('CRM');
-          const hr = Store.getDataset('HR');
-          const bud = Store.getDataset('BUDGET');
-          if (gl.length) previewRoot.appendChild(renderDatasetCard('GL (General Ledger)', 'GL', gl, ['Date','Account','Subaccount','Dept','Product','Region','Currency','Amount','Memo','DocumentID','Debit/Credit']));
-          if (crm.length) previewRoot.appendChild(renderDatasetCard('CRM Bookings', 'CRM', crm, ['Date','Product','Region','Currency','BookedAmount','DocumentID']));
-          if (hr.length) previewRoot.appendChild(renderDatasetCard('HR / Payroll', 'HR', hr, ['Date','Dept','Headcount','AvgComp','Currency','DocumentID']));
-          if (bud.length) previewRoot.appendChild(renderDatasetCard('Budget', 'BUDGET', bud, ['Month','Account','Dept','Product','Amount','Currency']));
-        }
-
-        // Hashing util (SHA-256 hex)
-        async function sha256Hex(str) {
-          const enc = new TextEncoder().encode(str);
-          const buf = await crypto.subtle.digest('SHA-256', enc);
-          const arr = Array.from(new Uint8Array(buf));
-          return arr.map(b => b.toString(16).padStart(2,'0')).join('');
-        }
-        // Non-async wrapper for places where we want a best-effort tag
-        function hash(str) { return str.length > 0 ? `sha256:${str.length}` : 'sha256:0'; }
-
-        async function snapshot(summary, deltaObj) {
-          const timestamp = Date.now();
-          await DB.snapshots.add({ timestamp, summary });
-          await DB.audit.add({ timestamp, action: 'snapshot', entity: 'workspace', beforeHash: '', afterHash: '', note: summary });
-          renderSnapshots();
-        }
-        async function audit(action, entity, beforeHash, afterHash, note) {
-          await DB.audit.add({ timestamp: Date.now(), action, entity, beforeHash, afterHash, note: note || '' });
-        }
-
-        // Minimal CSV parser fallback (RFC4180-lite): returns {data: rows, fields}
-        function parseCsvFallback(text) {
-          const lines = text.replace(/\r\n?/g, '\n').split('\n').filter(l => l.length > 0);
-          if (lines.length === 0) return { data: [], fields: [] };
-          const parseLine = (line) => {
-            const out = [];
-            let cur = '';
-            let inQ = false;
-            for (let i=0; i<line.length; i++) {
-              const ch = line[i];
-              if (inQ) {
-                if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }
-                else if (ch === '"') { inQ = false; }
-                else { cur += ch; }
-              } else {
-                if (ch === ',') { out.push(cur); cur = ''; }
-                else if (ch === '"') { inQ = true; }
-                else { cur += ch; }
-              }
-            }
-            out.push(cur);
-            return out;
-          };
-          const header = parseLine(lines[0]);
-          const rows = lines.slice(1).map(l => {
-            const vals = parseLine(l);
-            const obj = {};
-            header.forEach((h, idx) => { obj[h.trim()] = (vals[idx] ?? '').trim(); });
-            return obj;
-          });
-          return { data: rows, fields: header.map(h => h.trim()) };
-        }
-
-        // File ingestion
-        const dropzone = qs('#dropzone');
-        const fileInput = qs('#fileInput');
-        const pickFiles = qs('#pickFiles');
-        pickFiles.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
-        ;['dragenter','dragover'].forEach(ev => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }));
-        ;['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
-        dropzone.addEventListener('drop', (e) => {
-          const files = Array.from(e.dataTransfer.files || []);
-          handleFiles(files);
-        });
-
-        function handleFiles(files) {
-          if (!files || files.length === 0) return;
-          files.forEach(file => {
-            const name = (file.name || '').toLowerCase();
-            if (name.endsWith('.csv')) {
-              readText(file).then(text => parseCsv(text)).then(({ rows, fields }) => openMappingWizard(file.name, rows, fields)).catch(err => toast(err.message || String(err)));
-            } else if (name.endsWith('.xlsx')) {
-              readArrayBuffer(file).then(buf => parseXlsx(buf)).then(sheets => openSheetPickerAndMap(file.name, sheets)).catch(err => toast(err.message || String(err)));
-            } else {
-              toast('Unsupported file: ' + file.name);
-            }
-          });
-        }
-
-        function readText(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onerror = () => rej(r.error); r.onload = () => res(String(r.result)); r.readAsText(file); }); }
-        function readArrayBuffer(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onerror = () => rej(r.error); r.onload = () => res(r.result); r.readAsArrayBuffer(file); }); }
-
-        // Web Worker for CSV parsing (and passthrough for XLSX JSON)
-        let parseWorker;
-        function ensureWorker() {
-          if (parseWorker) return parseWorker;
-          const workerCode = `self.onmessage = (e) => { const { type, payload } = e.data || {}; if (type === 'parseCSV') { const text = payload || ''; const lines = text.replace(/\\r\\n?/g, '\\n').split('\\n').filter(l => l.length > 0); if (lines.length === 0) { self.postMessage({ ok:true, rows:[], fields:[] }); return; } const parseLine = (line) => { const out=[]; let cur=''; let inQ=false; for (let i=0;i<line.length;i++){ const ch=line[i]; if (inQ){ if (ch==='"' && line[i+1]==='"'){ cur+='"'; i++; } else if (ch==='"'){ inQ=false; } else { cur+=ch; } } else { if (ch===','){ out.push(cur); cur=''; } else if (ch==='"'){ inQ=true; } else { cur+=ch; } } } out.push(cur); return out; }; const header = parseLine(lines[0]); const rows = lines.slice(1).map(l => { const vals = parseLine(l); const obj = {}; header.forEach((h, idx) => { obj[h.trim()] = (vals[idx] ?? '').trim(); }); return obj; }); self.postMessage({ ok:true, rows, fields: header.map(h => h.trim()) }); } else if (type === 'passthrough') { self.postMessage({ ok:true, ...payload }); } else { self.postMessage({ ok:false, error:'unknown_type' }); } };`;
-          const blob = new Blob([workerCode], { type: 'application/javascript' });
-          parseWorker = new Worker(URL.createObjectURL(blob));
-          return parseWorker;
-        }
-
-        function parseCsv(text) {
-          return new Promise((resolve) => {
-            if (window.Papa && typeof window.Papa.parse === 'function') {
-              const result = window.Papa.parse(text, { header: true, skipEmptyLines: true });
-              resolve({ rows: result.data || [], fields: result.meta && result.meta.fields || Object.keys((result.data||[{}])[0]||{}) });
-              return;
-            }
-            const w = ensureWorker();
-            const onMsg = (ev) => { w.removeEventListener('message', onMsg); resolve({ rows: ev.data.rows || [], fields: ev.data.fields || [] }); };
-            w.addEventListener('message', onMsg);
-            w.postMessage({ type:'parseCSV', payload: text });
-          });
-        }
-
-        function parseXlsx(arrayBuffer) {
-          if (window.XLSX && typeof window.XLSX.read === 'function') {
-            const wb = window.XLSX.read(arrayBuffer, { type: 'array' });
-            const sheets = {};
-            wb.SheetNames.forEach(name => {
-              const ws = wb.Sheets[name];
-              const json = window.XLSX.utils.sheet_to_json(ws, { defval: '' });
-              sheets[name] = { rows: json, fields: Object.keys(json[0] || {}) };
-            });
-            return Promise.resolve(sheets);
-          }
-          return Promise.reject(new Error('XLSX library not available offline. Load CSV instead.'));
-        }
-
-        function toast(message) {
-          const div = document.createElement('div');
-          div.className = 'notice';
-          div.style.position = 'fixed';
-          div.style.bottom = '16px';
-          div.style.right = '16px';
-          div.style.zIndex = '100';
-          div.textContent = message;
-          document.body.appendChild(div);
-          setTimeout(() => div.remove(), 3500);
-        }
-
-        // Mapping Wizard
-        function canonicalFieldsFor(rows) {
-          // Heuristics
-          const sample = rows[0] || {};
-          const cols = Object.keys(sample);
-          const byLower = {}; cols.forEach(c => byLower[c.toLowerCase()] = c);
-          function pick(...names) {
-            for (const n of names) { if (byLower[n]) return byLower[n]; }
-            return '';
-          }
-          return {
-            Date: pick('date','posting date','tran date','period','month'),
-            Account: pick('account','acct','gl account','natural account'),
-            Subaccount: pick('subaccount','sub account','subcategory','subcat'),
-            Dept: pick('dept','department','cost center','costcentre','cost_center'),
-            Product: pick('product','sku','item','offer'),
-            Region: pick('region','geo','area'),
-            Currency: pick('currency','ccy','fx'),
-            Amount: pick('amount','amt','value','net','debit','credit','net amount'),
-            Memo: pick('memo','description','desc','narrative','note'),
-            DocumentID: pick('documentid','document id','doc id','docid','reference','ref','transaction id','tranid'),
-            'Debit/Credit': pick('debit/credit','dc','dr/cr','drcr')
-          };
-        }
-
-        function openSheetPickerAndMap(filename, sheets) {
-          // If multiple sheets, pick first then proceed to mapping (basic for now)
-          const names = Object.keys(sheets);
-          const chosen = sheets[names[0]] || { rows: [], fields: [] };
-          openMappingWizard(`${filename} • ${names[0]||'Sheet1'}`, chosen.rows, chosen.fields);
-        }
-
-        function openMappingWizard(title, rows, fields) {
-          const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-          const modal = document.createElement('div'); modal.className = 'modal';
-          const header = document.createElement('header'); header.innerHTML = `<strong>Mapping Wizard</strong><span style="color:var(--muted); font-size:12px">${title}</span>`;
-          const closeBtn = document.createElement('button'); closeBtn.className = 'button ghost'; closeBtn.textContent = 'Close';
-          header.appendChild(closeBtn);
-          const content = document.createElement('div'); content.className = 'content';
-
-          const initial = canonicalFieldsFor(rows);
-          const canonical = ['Date','Account','Subaccount','Dept','Product','Region','Currency','Amount','Memo','DocumentID','Debit/Credit'];
-
-          const form = document.createElement('div');
-          form.className = 'grid';
-          canonical.forEach(field => {
-            const row = document.createElement('div'); row.className = 'mapping-row';
-            const label = document.createElement('label'); label.textContent = field;
-            const select = document.createElement('select');
-            const optNone = document.createElement('option'); optNone.value = ''; optNone.textContent = '— not mapped —'; select.appendChild(optNone);
-            fields.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; select.appendChild(o); });
-            if (initial[field]) select.value = initial[field];
-            row.appendChild(label); row.appendChild(select);
-            row.dataset.field = field;
-            form.appendChild(row);
-          });
-
-          const preview = document.createElement('div');
-          preview.style.marginTop = '8px';
-          function buildMapping() {
-            const mapping = {};
-            form.querySelectorAll('.mapping-row').forEach(r => {
-              const key = r.dataset.field; const sel = r.querySelector('select'); mapping[key] = sel.value || '';
-            });
-            return mapping;
-          }
-          function applyMappingRows(mapping, inputRows) {
-            const out = [];
-            for (const r of inputRows) {
-              const o = {};
-              for (const k of Object.keys(mapping)) {
-                const src = mapping[k];
-                o[k] = src ? r[src] : '';
-              }
-              // Normalize Amount numeric
-              if (o.Amount !== '' && o.Amount != null && !Number.isFinite(o.Amount)) {
-                const n = Number(String(o.Amount).replace(/[^0-9.-]/g, ''));
-                o.Amount = Number.isFinite(n) ? n : 0;
-              }
-              out.push(o);
-            }
-            return out;
-          }
-          function renderPreview() {
-            const mapping = buildMapping();
-            const rowsMapped = applyMappingRows(mapping, rows.slice(0, 25));
-            preview.innerHTML = '';
-            preview.appendChild(createTable(rowsMapped, Object.keys(mapping)));
-          }
-          renderPreview();
-          content.appendChild(form);
-          content.appendChild(preview);
-
-          const footer = document.createElement('footer');
-          const cancelBtn = document.createElement('button'); cancelBtn.className = 'button'; cancelBtn.textContent = 'Cancel';
-          const importBtn = document.createElement('button'); importBtn.className = 'button primary'; importBtn.textContent = 'Import';
-          footer.appendChild(cancelBtn); footer.appendChild(importBtn);
-
-          modal.appendChild(header); modal.appendChild(content); modal.appendChild(footer);
-          overlay.appendChild(modal);
-          document.body.appendChild(overlay);
-          overlay.style.display = 'flex';
-
-          // interactions
-          closeBtn.onclick = cancelBtn.onclick = () => { document.body.removeChild(overlay); };
-          content.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT') renderPreview(); });
-          importBtn.onclick = async () => {
-            const mapping = buildMapping();
-            const mapped = applyMappingRows(mapping, rows);
-            // Append to GL dataset by default for now (can infer later)
-            await Store.appendRows('GL', mapped);
-            renderDataPreview();
-            document.body.removeChild(overlay);
-            toast(`Imported ${mapped.length} rows into GL`);
-            activate('ingest');
-          };
-        }
-
-        // Demo Mode (loads embedded datasets)
-        const demoBtn = qs('#demoBtn');
-        demoBtn.addEventListener('click', async () => {
-          await Store.clear();
-          await Store.putDataset('GL', DEMO_GL);
-          await Store.putDataset('CRM', DEMO_CRM);
-          await Store.putDataset('HR', DEMO_HR);
-          await Store.putDataset('BUDGET', DEMO_BUDGET);
-          renderDataPreview();
-          
-          // Reset scenarios to defaults
-          const defaultScenarios = {
-            A: { name: 'Base Case', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 },
-            B: { name: 'Upside', revGrowthPct: 15, cogsPct: 24, hc: { Sales:3, 'R&D':2, Marketing:1, 'G&A':0 }, compPct: 5 },
-            C: { name: 'Downside', revGrowthPct: -5, cogsPct: 28, hc: { Sales:-2, 'R&D':-1, Marketing:-1, 'G&A':0 }, compPct: -2 }
-          };
-          
-          for (const k of SCEN_KEYS) {
-            await saveScenario(k, defaultScenarios[k]);
-            scenarioCache.set(k, defaultScenarios[k]);
-          }
-          
-          // Auto-refresh forecast with demo data
-          const latestMonth = latestMonthFromGL(DEMO_GL) || '2024-03';
-          if (fcPeriod()) fcPeriod().value = latestMonth;
-          
-          // Load the current scenario into UI and refresh forecast
-          const currentKey = scenSelect().value;
-          const currentScenario = scenarioCache.get(currentKey) || defaultScenarios[currentKey];
-          
-          // Update UI with current scenario
-          scenName().value = currentScenario.name || '';
-          drvRevGrowth().value = currentScenario.revGrowthPct;
-          drvCogsPct().value = currentScenario.cogsPct;
-          drvHcSales().value = currentScenario.hc.Sales||0;
-          drvHcRD().value = currentScenario.hc['R&D']||0;
-          drvHcMkt().value = currentScenario.hc.Marketing||0;
-          drvHcGA().value = currentScenario.hc['G&A']||0;
-          drvCompPct().value = currentScenario.compPct||0;
-          
-          if (currentScenario) {
-            const res = runForecastCalc(latestMonth, currentScenario);
-            renderForecastSummary(res, latestMonth);
-          }
-          
-          const ingestView = qs('#view-ingest');
-          const msg = document.createElement('div'); msg.className = 'notice';
-          msg.textContent = 'Demo workspace loaded. Preview shows embedded GL, CRM, HR, and Budget datasets.';
-          ingestView.prepend(msg); setTimeout(() => msg.remove(), 3000);
-          activate('ingest');
-          // After demo load, set sensible defaults for periods
-          setValidationPeriodDefaults();
-        });
-
-        // Keyboard shortcuts
-        let gPressed = false;
+        document.getElementById('pageTitle').textContent = titles[view] || view;
+      }
+
+      // Command Palette with 50-line Fuzzy Search
+      const COMMANDS = [
+        { id: 'import', label: 'Import Files', keywords: 'upload data csv xlsx' },
+        { id: 'demo', label: 'Load Demo Data', keywords: 'sample test example' },
+        { id: 'validate', label: 'Run Validation', keywords: 'check rules exceptions' },
+        { id: 'exceptions', label: 'Open Exceptions Queue', keywords: 'errors triage fix' },
+        { id: 'forecast', label: 'Create Scenario', keywords: 'projection planning future' },
+        { id: 'variance', label: 'Variance Analysis', keywords: 'budget actual difference' },
+        { id: 'closepack', label: 'Generate Close Pack', keywords: 'report pdf executive' },
+        { id: 'audit', label: 'Export Audit Log', keywords: 'trail history csv' },
+        { id: 'theme', label: 'Toggle Theme', keywords: 'dark light mode' },
+        { id: 'help', label: 'Show Help', keywords: 'support documentation' }
+      ];
+
+      function setupCommandPalette() {
         document.addEventListener('keydown', (e) => {
-          if (e.key === 'g') { gPressed = true; return; }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') { gPressed = true; return; }
-          if (gPressed && (e.ctrlKey || e.metaKey)) {
-            const map = { i:'ingest', v:'validate', a:'analyze', f:'forecast', r:'report', u:'audit' };
-            const target = map[e.key.toLowerCase()];
-            if (target) { activate(target); }
-            gPressed = false; return;
-          }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); themeBtn.click(); }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); demoBtn.click(); }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') { e.preventDefault(); helpToggle.click(); }
-          // Validation shortcuts
-          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && document.activeElement && document.activeElement.tagName !== 'INPUT') {
-            const runBtnMaybe = document.getElementById('runValidation');
-            if (runBtnMaybe && qs('#view-validate').classList.contains('active')) runBtnMaybe.click();
-          }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && qs('#view-validate').classList.contains('active')) {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
-            selectAllExceptions.checked = true; selectAllExceptions.dispatchEvent(new Event('change'));
+            toggleCommandPalette();
           }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm' && qs('#view-validate').classList.contains('active')) {
-            e.preventDefault();
-            bulkMergeDupesBtn.click();
-          }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e' && qs('#view-validate').classList.contains('active')) {
-            e.preventDefault();
-            bulkResolveBtn.click();
-          }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i' && qs('#view-validate').classList.contains('active')) {
-            e.preventDefault();
-            bulkIgnoreBtn.click();
+          if (e.key === 'Escape') {
+            hideCommandPalette();
           }
         });
-        document.addEventListener('keyup', (e) => { if (e.key.toLowerCase() === 'g') gPressed = false; });
 
-        // Initial render if demo already loaded in this session (future: persist)
-        renderDataPreview();
-        renderEssentialsInHelp();
-        function setValidationPeriodDefaults() {
-          const gl = Store.getDataset('GL');
-          if (!gl.length) return;
-          const month = latestMonthFromGL(gl);
-          if (!month) return;
-          const psEl = qs('#periodStart');
-          const peEl = qs('#periodEnd');
-          const anEl = qs('#anPeriod');
-          const fcEl = qs('#fcPeriod');
-          const d = new Date(month + '-01T00:00:00Z');
-          const startStr = d.toISOString().slice(0,10);
-          const e = new Date(month + '-01T00:00:00Z'); e.setMonth(e.getMonth()+1); e.setDate(0);
-          const endStr = e.toISOString().slice(0,10);
-          if (psEl && !psEl.value) psEl.value = startStr;
-          if (peEl && !peEl.value) peEl.value = endStr;
-          if (anEl && !anEl.value) anEl.value = month;
-          if (fcEl && !fcEl.value) fcEl.value = month;
+        const cmdSearch = document.getElementById('cmdSearch');
+        cmdSearch.addEventListener('input', filterCommands);
+        cmdSearch.addEventListener('keydown', handleCommandNavigation);
+      }
+
+      function toggleCommandPalette() {
+        const palette = document.getElementById('commandPalette');
+        if (palette.classList.contains('active')) {
+          hideCommandPalette();
+        } else {
+          palette.classList.add('active');
+          document.getElementById('cmdSearch').focus();
+          renderCommands(COMMANDS);
         }
-        setValidationPeriodDefaults();
-        /* Close Pack generation */
-        const generateClosePackBtn = qs('#generateClosePack');
-        const exportClosePackPdfBtn = qs('#exportClosePackPdf');
-        const closePackBody = qs('#closePackBody');
-        let lastReconResult = null;
+      }
 
-        function buildExecutiveSummary() {
-          // Pull key messages from reconciliation and validation summary
-          const gl = Store.getDataset('GL');
-          const ps = toDate((qs('#periodStart') && qs('#periodStart').value)||'');
-          const pe = toDate((qs('#periodEnd') && qs('#periodEnd').value)||'');
-          let reconText = 'Reconciliation not run.';
-          if (ps && pe) {
-            lastReconResult = computeReconciliation(ps, pe);
-            const variances = (lastReconResult.tieRows||[]).filter(r => Math.abs(r.Variance) > 1e-6).slice(0,3);
-            reconText = variances.length ?
-              `Top variances: ${variances.map(v => `${v.Account}/${v.Dimension}: ${v.Variance.toFixed(0)}`).join('; ')}` :
-              'Subledger tie-out balanced.';
+      function hideCommandPalette() {
+        document.getElementById('commandPalette').classList.remove('active');
+        document.getElementById('cmdSearch').value = '';
+      }
+
+      // Fuzzy Search Implementation (50 lines)
+      function fuzzyScore(query, text, keywords = '') {
+        const searchText = (text + ' ' + keywords).toLowerCase();
+        query = query.toLowerCase();
+        
+        if (!query) return 1;
+        if (searchText.includes(query)) return 0.9;
+        
+        let score = 0;
+        let queryIndex = 0;
+        let bonus = 0;
+        
+        for (let i = 0; i < searchText.length && queryIndex < query.length; i++) {
+          if (searchText[i] === query[queryIndex]) {
+            score += 1 + bonus;
+            bonus = Math.min(bonus + 0.1, 1);
+            queryIndex++;
+          } else {
+            bonus = 0;
           }
-          return `<p>Close period highlights: ${gl.length} GL entries processed. ${reconText}</p>`;
         }
+        
+        return queryIndex === query.length ? score / query.length : 0;
+      }
 
-        function kpiRow(label, value) { return `<tr><td>${label}</td><td style="text-align:right">${Number(value||0).toLocaleString()}</td></tr>`; }
+      function filterCommands() {
+        const query = document.getElementById('cmdSearch').value;
+        const scored = COMMANDS.map(cmd => ({
+          ...cmd,
+          score: fuzzyScore(query, cmd.label, cmd.keywords)
+        })).filter(cmd => cmd.score > 0).sort((a, b) => b.score - a.score);
+        
+        renderCommands(scored);
+      }
 
-        function renderClosePack() {
-          const month = (qs('#anPeriod').value || '').slice(0,7);
-          const scenKey = (qs('#scenarioSelect')?qs('#scenarioSelect').value:'A');
-          const scen = (window && window.scenarioCache && window.scenarioCache.get) ? (scenarioCache.get(scenKey) || {}) : {};
-          let forecastBlock = '';
-          if (month && scen) {
-            const res = runForecastCalc(month, scen);
-            forecastBlock = `<table class="data-table"><thead><tr><th>Metric</th><th>Actual</th><th>Budget</th><th>Forecast</th><th>Δ F-A</th><th>Δ F-B</th></tr></thead><tbody>
-              ${kpiRow('Revenue', res.actual.rev)}
-              ${kpiRow('COGS', res.actual.cogs)}
-              ${kpiRow('Gross Profit', res.actual.gp)}
-              ${kpiRow('Opex', res.actual.opex)}
-              ${kpiRow('Operating Income', res.actual.opi)}
-            </tbody></table>`;
-          }
+      function renderCommands(commands) {
+        const results = document.getElementById('cmdResults');
+        results.innerHTML = commands.map((cmd, index) => `
+          <div class="cmd-item ${index === 0 ? 'selected' : ''}" data-command="${cmd.id}">
+            <span>${cmd.label}</span>
+          </div>
+        `).join('');
 
-          const body = `
-            <h3>Executive Summary</h3>
-            ${buildExecutiveSummary()}
-            <h3>KPIs</h3>
-            ${forecastBlock || '<div class="notice">Run Forecast/Analysis to populate KPIs.</div>'}
-            <h3>Variance Bridges</h3>
-            <div><canvas id="cpWaterfall" class="chart-canvas"></canvas></div>
-            <h3>Department Rollups</h3>
-            <div id="cpDeptRollups"></div>
-            <h3>Footnotes</h3>
-            <ol>
-              <li>Data sources: GL/CRM/HR/Budget from local uploads or Demo.</li>
-              <li>Transformations: mapping wizard, validation fixes, duplicate merges.</li>
-              <li>Assumptions: ${ESSENTIALS.Forecast}, ${ESSENTIALS.Security}.</li>
-            </ol>
-          `;
-          closePackBody.innerHTML = body;
-
-          // Simple waterfall fallback (sum by sign)
-          const gl = Store.getDataset('GL').filter(r => monthOf(r.Date) === month);
-          const rev = gl.filter(r => String(r.Account||'').startsWith('4000')).reduce((a,b)=>a+Number(b.Amount||0),0);
-          const cogs = gl.filter(r => String(r.Account||'').startsWith('5000')).reduce((a,b)=>a+Number(b.Amount||0),0);
-          const opex = gl.filter(r => String(r.Account||'').startsWith('6000')).reduce((a,b)=>a+Number(b.Amount||0),0);
-          const wfData = [rev, cogs, opex, rev+cogs+opex];
-          renderCharts(qs('#cpWaterfall'), document.createElement('canvas'), ['Revenue','COGS','Opex','Operating Income'], wfData, wfData);
-
-          // Dept rollups
-          const byDept = groupBy(gl.filter(r => String(r.Account||'').startsWith('6000')), r => r.Dept || 'Unassigned', sumAgg)
-            .sort((a,b)=>Math.abs(b.value)-Math.abs(a.value)).slice(0,10);
-          const rollDiv = qs('#cpDeptRollups');
-          rollDiv.innerHTML = '';
-          const tbl = document.createElement('table'); tbl.className = 'data-table';
-          const rows = byDept.map(x => ({ Dept: x.key, Opex: x.value.toFixed(0) }));
-          tbl.appendChild(createTable(rows, ['Dept','Opex'])); rollDiv.appendChild(tbl);
-        }
-
-        generateClosePackBtn.addEventListener('click', () => { renderClosePack(); toast('Close Pack preview generated'); });
-        exportClosePackPdfBtn.addEventListener('click', async () => {
-          const hasLibs = !!(window.jspdf || window.jsPDF) && !!(window.html2canvas);
-          if (hasLibs) {
-            try {
-              const doc = new (window.jsPDF || window.jspdf.jsPDF)('p','pt','a4');
-              const el = qs('#closePackPreview');
-              const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
-              const img = canvas.toDataURL('image/png');
-              const pageWidth = doc.internal.pageSize.getWidth();
-              const pageHeight = doc.internal.pageSize.getHeight();
-              const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
-              const w = canvas.width * ratio, h = canvas.height * ratio;
-              doc.addImage(img, 'PNG', (pageWidth - w)/2, 20, w, h);
-              doc.save('ClosePack.pdf');
-              toast('PDF exported');
-              return;
-            } catch (e) { toast('PDF export failed; falling back to print.'); }
-          }
-          // Fallback: print-to-PDF
-          toast('Libraries unavailable. Use browser Print → Save as PDF.');
-          window.print();
+        results.querySelectorAll('.cmd-item').forEach(item => {
+          item.addEventListener('click', () => executeCommand(item.dataset.command));
         });
+      }
 
-        /* Self-Test */
-        const selfTestBtn = qs('#selfTest');
-        const selfTestStatus = qs('#selfTestStatus');
-        let networkAttempts = 0;
-        (function monkeyPatchNetwork() {
-          const origFetch = window.fetch; const origXHR = window.XMLHttpRequest;
-          window.fetch = function() { networkAttempts++; return origFetch.apply(this, arguments); };
-          const Patched = function(){ const xhr = new origXHR(); xhr.addEventListener('loadstart', ()=>networkAttempts++); return xhr; };
-          window.XMLHttpRequest = Patched;
-        })();
+      function handleCommandNavigation(e) {
+        const items = document.querySelectorAll('.cmd-item');
+        const selected = document.querySelector('.cmd-item.selected');
+        let currentIndex = Array.from(items).indexOf(selected);
 
-        async function runSelfTest() {
-          selfTestStatus.textContent = 'Running…';
-          await new Promise(r => setTimeout(r, 50));
-          // 1) Load demo
-          await Store.clear(); await Store.putDataset('GL', DEMO_GL); await Store.putDataset('CRM', DEMO_CRM); await Store.putDataset('HR', DEMO_HR); await Store.putDataset('BUDGET', DEMO_BUDGET);
-          // 2) Validations
-          const res = runValidationEngine('', '');
-          const hasFive = res.exceptions.length >= 5;
-          // 3) Resolve a few exceptions (simulate ignore)
-          EXCEPTIONS_STATE = res.exceptions.slice(0,5).map(e => ({ ...e, status: 'resolved' }));
-          // 4) Snapshot
-          await snapshot('Self-Test snapshot', {});
-          // 5) Close pack preview
-          renderClosePack();
-          // 6) Network attempts
-          const netOK = networkAttempts === 0;
-          const passed = hasFive && netOK;
-          selfTestStatus.textContent = passed ? 'PASS' : 'FAIL';
-          addDecision(`Self-Test ${passed ? 'PASS' : 'FAIL'} — exceptions>=5=${hasFive}, networkOK=${netOK}`);
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          currentIndex = Math.min(currentIndex + 1, items.length - 1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          currentIndex = Math.max(currentIndex - 1, 0);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selected) executeCommand(selected.dataset.command);
+          return;
         }
-        selfTestBtn.addEventListener('click', () => runSelfTest());
 
-        /* Validation & Exceptions (Phase 1) */
-        const RULES = {
-          REQUIRED: 'Required fields missing',
-          TYPES: 'Invalid data types',
-          PERIOD: 'Date outside selected period',
-          CURRENCY: 'Missing currency',
-          DUPLICATE: 'Potential duplicate',
-          REV_NEGATIVE: 'Negative amount on revenue',
-          OUTLIER: 'Out-of-range amount (> 5× IQR)'
+        items.forEach((item, index) => {
+          item.classList.toggle('selected', index === currentIndex);
+        });
+      }
+
+      function executeCommand(commandId) {
+        const actions = {
+          import: () => alert('File import would open here'),
+          demo: () => loadDemo(),
+          validate: () => { switchView('validate'); alert('Validation running...'); },
+          exceptions: () => switchView('validate'),
+          forecast: () => switchView('forecast'),
+          variance: () => switchView('analyze'),
+          closepack: () => { switchView('report'); alert('Generating Close Pack...'); },
+          audit: () => { switchView('audit'); alert('Exporting audit log...'); },
+          theme: () => toggleTheme(),
+          help: () => alert('Help documentation would open here')
         };
 
-        function toDate(v) { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-        function isRevenueAccount(acc) { return typeof acc === 'string' && /(^|[^\d])4\d{3}|revenue|sales/i.test(acc); }
-        function computeIqr(values) {
-          const nums = values.filter(x => Number.isFinite(x)).slice().sort((a,b)=>a-b);
-          if (nums.length < 8) return { q1: null, q3: null, iqr: null };
-          const q1 = quantile(nums, 0.25); const q3 = quantile(nums, 0.75);
-          return { q1, q3, iqr: q3 - q1 };
+        if (actions[commandId]) {
+          actions[commandId]();
+          hideCommandPalette();
+          logDecision(`Command executed: ${COMMANDS.find(c => c.id === commandId)?.label}`);
         }
-        function quantile(arr, p) {
-          const idx = (arr.length - 1) * p; const lo = Math.floor(idx), hi = Math.ceil(idx);
-          if (lo === hi) return arr[lo];
-          return arr[lo] + (arr[hi] - arr[lo]) * (idx - lo);
-        }
+      }
 
-        function runValidationEngine(periodStart, periodEnd) {
-          const gl = Store.getDataset('GL');
-          const exceptions = [];
-          const counts = { REQUIRED:0, TYPES:0, PERIOD:0, CURRENCY:0, DUPLICATE:0, REV_NEGATIVE:0, OUTLIER:0 };
-          const byKey = new Map();
-          const amounts = gl.map(r => Number(r.Amount)).filter(Number.isFinite);
-          const { q1, q3, iqr } = computeIqr(amounts);
-          const outlierThreshold = iqr != null ? (q3 + 5 * iqr) : null;
-          for (let i=0; i<gl.length; i++) {
-            const r = gl[i];
-            const missing = [];
-            ['Date','Account','Amount','DocumentID'].forEach(f => { if (!r[f] && r[f] !== 0) missing.push(f); });
-            if (missing.length) { counts.REQUIRED++; exceptions.push(exc('REQUIRED', i, `Missing: ${missing.join(', ')}`, r)); }
+      // Network Monitoring
+      function setupNetworkMonitoring() {
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+          AppState.networkCalls++;
+          updateNetworkBadge();
+          return originalFetch.apply(this, args);
+        };
 
-            // Types
-            const d = toDate(r.Date);
-            const amt = Number(r.Amount);
-            if (!d || !Number.isFinite(amt)) { counts.TYPES++; exceptions.push(exc('TYPES', i, `Bad types Date=${r.Date} Amount=${r.Amount}`, r)); }
-
-            // Period
-            if (d && periodStart && periodEnd) {
-              const ps = toDate(periodStart), pe = toDate(periodEnd);
-              if (ps && pe && (d < ps || d > pe)) { counts.PERIOD++; exceptions.push(exc('PERIOD', i, `Date ${r.Date} out of [${periodStart}..${periodEnd}]`, r)); }
-            }
-
-            // Currency
-            if (!r.Currency) { counts.CURRENCY++; exceptions.push(exc('CURRENCY', i, 'Currency missing', r)); }
-
-            // Duplicate
-            const key = `${r.DocumentID || ''}|${r.Date || ''}|${r.Account || ''}|${amt}`;
-            if (byKey.has(key)) { counts.DUPLICATE++; exceptions.push(exc('DUPLICATE', i, `Duplicate of row ${byKey.get(key)}`, r)); }
-            else { byKey.set(key, i); }
-
-            // Revenue negative
-            if (isRevenueAccount(r.Account) && amt < 0) { counts.REV_NEGATIVE++; exceptions.push(exc('REV_NEGATIVE', i, 'Negative revenue amount', r)); }
-
-            // Outlier
-            if (outlierThreshold != null && Math.abs(amt) > outlierThreshold) { counts.OUTLIER++; exceptions.push(exc('OUTLIER', i, `Amount |${amt}| > 5×IQR (${outlierThreshold.toFixed(2)})`, r)); }
-          }
-          return { exceptions, counts };
-        }
-        /* Tiny unit-style test harness for rule engine */
-        function assertEqual(actual, expected, name) {
-          const pass = JSON.stringify(actual) === JSON.stringify(expected);
-          return { name, pass, actual, expected };
-        }
-        function test_runValidationEngine() {
-          const origGL = Store.getDataset('GL').slice();
-          const bad = [{ Date:'', Account:'', Amount:'x', DocumentID:'' }];
-          Store.appendRows && Store.appendRows('GL', []); // no-op to ensure api exists
-          // Temporarily override dataset for test
-          const backup = origGL.slice();
-          (function temp(){
-            // inject
-            const set = (rows)=>{ if (Store.putDataset) return Store.putDataset('GL', rows); else return Promise.resolve(); };
-            return set(bad).then(()=>{
-              const res = runValidationEngine('', '');
-              const t1 = assertEqual(res.counts.REQUIRED > 0, true, 'required fields flagged');
-              const t2 = assertEqual(res.counts.TYPES > 0, true, 'type errors flagged');
-              return Promise.all([t1,t2]).then(()=>({ results:[t1,t2] }));
-            }).finally(()=>Store.putDataset && Store.putDataset('GL', backup));
-          })();
-        }
-        // Expose simple runner in console: window.testValidation()
-        window.testValidation = test_runValidationEngine;
-        function exc(rule, rowIndex, message, row) { return { id: `${rule}-${rowIndex}-${Math.random().toString(36).slice(2,7)}`, rule, rowIndex, message, status: 'open', rowSnapshot: { ...row } }; }
-
-        // Exceptions UI
-        const runBtn = qs('#runValidation');
-        const msgChip = qs('#validationMsg');
-        const periodStart = qs('#periodStart');
-        const periodEnd = qs('#periodEnd');
-        const summaryRoot = qs('#validationSummary');
-        const filterRule = qs('#filterRule');
-        const filterStatus = qs('#filterStatus');
-        const filterSearch = qs('#filterSearch');
-        const exceptionsBody = qs('#exceptionsBody');
-        const runReconBtn = qs('#runReconciliation');
-        const reconBody = qs('#reconBody');
-        const bulkCount = qs('#bulkCount');
-        const headerSelect = qs('#headerSelect');
-        const selectAllExceptions = qs('#selectAllExceptions');
-        const bulkResolveBtn = qs('#bulkResolve');
-        const bulkIgnoreBtn = qs('#bulkIgnore');
-        const bulkMergeDupesBtn = qs('#bulkMergeDupes');
-        let EXCEPTIONS_STATE = [];
-        let SELECTED_EX_IDS = new Set();
-
-        function populateRuleFilter() {
-          filterRule.innerHTML = '<option value="">All rules</option>' + Object.keys(RULES).map(k => `<option value="${k}">${k}</option>`).join('');
-        }
-        populateRuleFilter();
-
-        runBtn.addEventListener('click', () => {
-          msgChip.textContent = 'Running...';
-          const res = runValidationEngine(periodStart.value || '', periodEnd.value || '');
-          EXCEPTIONS_STATE = res.exceptions;
-          renderSummary(res.counts);
-          renderExceptions();
-          msgChip.textContent = `Found ${EXCEPTIONS_STATE.length} exceptions`;
-          // Sync Analyze period to selected validation period end (month)
-          if (periodEnd.value) { const m = (periodEnd.value || '').slice(0,7); if (m) { anPeriodInput.value = m; } }
-        });
-
-        runReconBtn.addEventListener('click', () => {
-          const ps = toDate(periodStart.value || '');
-          const pe = toDate(periodEnd.value || '');
-          if (!ps || !pe) { reconBody.innerHTML = '<div class="notice">Please set Period Start and End.</div>'; return; }
-          const recon = computeReconciliation(ps, pe);
-          renderReconciliation(recon);
-        });
-
-        function renderSummary(counts) {
-          summaryRoot.innerHTML = '';
-          const entries = Object.keys(RULES).map(k => ({ key: k, label: RULES[k], count: counts[k] || 0 }));
-          entries.forEach(e => {
-            const card = document.createElement('div'); card.className = 'summary-card';
-            card.innerHTML = `<div style="font-size:12px; color:var(--muted)">${e.key}</div><div style="font-size:22px; font-weight:700">${e.count}</div><div style="font-size:12px">${e.label}</div>`;
-            summaryRoot.appendChild(card);
-          });
-        }
-
-        function matchesFilters(ex) {
-          if (filterRule.value && ex.rule !== filterRule.value) return false;
-          if (filterStatus.value && ex.status !== filterStatus.value) return false;
-          const q = (filterSearch.value || '').toLowerCase().trim();
-          if (!q) return true;
-          const r = ex.rowSnapshot || {};
-          const hay = [ex.message, r.Memo, r.Account, r.DocumentID].filter(Boolean).join(' ').toLowerCase();
-          return hay.includes(q);
-        }
-
-        function renderExceptions() {
-          exceptionsBody.innerHTML = '';
-          EXCEPTIONS_STATE.filter(matchesFilters).forEach(ex => {
-            const tr = document.createElement('tr');
-            const selTd = document.createElement('td');
-            const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = SELECTED_EX_IDS.has(ex.id); cb.addEventListener('change', () => { if (cb.checked) SELECTED_EX_IDS.add(ex.id); else SELECTED_EX_IDS.delete(ex.id); updateBulkCount(); });
-            selTd.appendChild(cb);
-            const r = ex.rowSnapshot;
-            const ruleTd = document.createElement('td'); ruleTd.innerHTML = `<span class="rule-tag">${ex.rule}</span><br/><span class="${statusClass(ex.status)}">${ex.status}</span>`;
-            const detailsTd = document.createElement('td'); detailsTd.textContent = ex.message;
-            const rowTd = document.createElement('td'); rowTd.innerHTML = `<div style="font-size:12px; color:var(--muted)">${r.Date || ''}</div><div>${r.Account || ''}</div><div>${r.Amount || ''}</div><div style="font-size:12px; color:var(--muted)">${r.DocumentID || ''}</div>`;
-            const actionsTd = document.createElement('td');
-            // Actions: Merge, Adjust, Ignore
-            const mergeBtn = document.createElement('button'); mergeBtn.className = 'button'; mergeBtn.textContent = 'Merge';
-            const adjustBtn = document.createElement('button'); adjustBtn.className = 'button'; adjustBtn.textContent = 'Adjust';
-            const ignoreBtn = document.createElement('button'); ignoreBtn.className = 'button'; ignoreBtn.textContent = 'Ignore';
-            actionsTd.appendChild(mergeBtn); actionsTd.appendChild(adjustBtn); actionsTd.appendChild(ignoreBtn);
-
-            mergeBtn.onclick = () => handleMerge(ex);
-            adjustBtn.onclick = () => handleAdjust(ex);
-            ignoreBtn.onclick = () => handleIgnore(ex);
-
-            tr.appendChild(selTd); tr.appendChild(ruleTd); tr.appendChild(detailsTd); tr.appendChild(rowTd); tr.appendChild(actionsTd);
-            exceptionsBody.appendChild(tr);
-          });
-          updateBulkCount();
-        }
-
-        function statusClass(s) { return s === 'open' ? 'status-open' : s === 'ignored' ? 'status-ignored' : 'status-resolved'; }
-        filterRule.onchange = filterStatus.onchange = () => renderExceptions();
-        filterSearch.oninput = () => renderExceptions();
-
-        function updateBulkCount() { bulkCount.textContent = `${SELECTED_EX_IDS.size} selected`; headerSelect.checked = false; }
-        headerSelect.addEventListener('change', () => {
-          const visible = EXCEPTIONS_STATE.filter(matchesFilters);
-          if (headerSelect.checked) visible.forEach(ex => SELECTED_EX_IDS.add(ex.id)); else visible.forEach(ex => SELECTED_EX_IDS.delete(ex.id));
-          renderExceptions();
-        });
-        selectAllExceptions.addEventListener('change', () => {
-          const all = EXCEPTIONS_STATE.slice();
-          if (selectAllExceptions.checked) all.forEach(ex => SELECTED_EX_IDS.add(ex.id)); else SELECTED_EX_IDS.clear();
-          renderExceptions();
-        });
-        bulkResolveBtn.addEventListener('click', () => {
-          EXCEPTIONS_STATE.forEach(ex => { if (SELECTED_EX_IDS.has(ex.id)) ex.status = 'resolved'; });
-          renderExceptions();
-        });
-        bulkIgnoreBtn.addEventListener('click', () => {
-          const reason = prompt('Reason to ignore selected:');
-          if (!reason) return;
-          EXCEPTIONS_STATE.forEach(ex => { if (SELECTED_EX_IDS.has(ex.id)) { ex.status = 'ignored'; ex.ignoreReason = reason; } });
-          renderExceptions();
-        });
-        bulkMergeDupesBtn.addEventListener('click', async () => {
-          // For selected duplicates, call handleMerge per item
-          for (const ex of EXCEPTIONS_STATE) {
-            if (SELECTED_EX_IDS.has(ex.id) && ex.rule === 'DUPLICATE' && ex.status === 'open') { await handleMerge(ex); }
-          }
-          renderExceptions();
-        });
-
-        async function handleMerge(ex) {
-          // Find all duplicates matching same composite key; keep the earliest index and sum amounts
-          const r = ex.rowSnapshot; const amt = Number(r.Amount);
-          const gl = Store.getDataset('GL');
-          const keyOf = (row) => `${row.DocumentID || ''}|${row.Date || ''}|${row.Account || ''}|${Number(row.Amount)}`;
-          const key = keyOf(r);
-          const indices = [];
-          for (let i=0; i<gl.length; i++) { if (keyOf(gl[i]) === key) indices.push(i); }
-          if (indices.length <= 1) { ex.status = 'resolved'; renderExceptions(); return; }
-          indices.sort((a,b)=>a-b);
-          const keep = indices[0];
-          const sum = indices.reduce((acc, idx) => acc + Number(gl[idx].Amount || 0), 0);
-          await Store.updateRow('GL', keep, row => ({ ...row, Amount: sum }));
-          await Store.removeRows('GL', indices.slice(1));
-          renderDataPreview();
-          ex.status = 'resolved';
-          renderExceptions();
-          toast(`Merged ${indices.length} duplicates; kept row ${keep}`);
-        }
-
-        function handleAdjust(ex) {
-          const r = ex.rowSnapshot;
-          const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-          const modal = document.createElement('div'); modal.className = 'modal';
-          const header = document.createElement('header'); header.innerHTML = '<strong>Adjust Row</strong>';
-          const closeBtn = document.createElement('button'); closeBtn.className = 'button ghost'; closeBtn.textContent = 'Close'; header.appendChild(closeBtn);
-          const content = document.createElement('div'); content.className = 'content';
-          const fields = ['Date','Account','Subaccount','Dept','Product','Region','Currency','Amount','Memo','DocumentID','Debit/Credit'];
-          const form = document.createElement('div'); form.className = 'grid';
-          const inputs = {};
-          fields.forEach(f => {
-            const row = document.createElement('div'); row.className = 'mapping-row';
-            const label = document.createElement('label'); label.textContent = f;
-            const inp = document.createElement('input'); inp.value = r[f] || ''; inp.style.padding = '8px 10px'; inp.style.border = '1px solid var(--border)'; inp.style.borderRadius = '8px'; inp.style.background = 'var(--bg)'; inp.style.color = 'var(--text)';
-            inputs[f] = inp; row.appendChild(label); row.appendChild(inp); form.appendChild(row);
-          });
-          content.appendChild(form);
-          const footer = document.createElement('footer');
-          const cancelBtn = document.createElement('button'); cancelBtn.className = 'button'; cancelBtn.textContent = 'Cancel';
-          const saveBtn = document.createElement('button'); saveBtn.className = 'button primary'; saveBtn.textContent = 'Save';
-          footer.appendChild(cancelBtn); footer.appendChild(saveBtn);
-          modal.appendChild(header); modal.appendChild(content); modal.appendChild(footer);
-          overlay.appendChild(modal); document.body.appendChild(overlay); overlay.style.display = 'flex';
-          closeBtn.onclick = cancelBtn.onclick = () => document.body.removeChild(overlay);
-          saveBtn.onclick = async () => {
-            // Update GL row at index
-            const idx = ex.rowIndex;
-            await Store.updateRow('GL', idx, (row) => {
-              const next = { ...row };
-              Object.keys(inputs).forEach(k => { next[k] = inputs[k].value; });
-              const n = Number(String(next.Amount).replace(/[^0-9.-]/g, ''));
-              next.Amount = Number.isFinite(n) ? n : 0;
-              return next;
-            });
-            document.body.removeChild(overlay);
-            ex.status = 'resolved';
-            renderDataPreview();
-            renderExceptions();
-            toast('Row adjusted');
+        const OriginalXHR = window.XMLHttpRequest;
+        window.XMLHttpRequest = function() {
+          const xhr = new OriginalXHR();
+          const originalOpen = xhr.open;
+          xhr.open = function() {
+            AppState.networkCalls++;
+            updateNetworkBadge();
+            return originalOpen.apply(this, arguments);
           };
+          return xhr;
+        };
+      }
+
+      function updateNetworkBadge() {
+        const badge = document.getElementById('networkBadge');
+        badge.textContent = `Network calls: ${AppState.networkCalls}`;
+        badge.style.background = AppState.networkCalls > 0 ? 'var(--warn)' : 'var(--ok)';
+      }
+
+      // Decision Logging
+      function logDecision(text) {
+        const timestamp = new Date().toLocaleString();
+        AppState.decisions.push({ text, timestamp });
+        
+        const logContainer = document.getElementById('decisionLog');
+        const entry = document.createElement('div');
+        entry.className = 'mb-3';
+        entry.innerHTML = `
+          <div class="font-weight-bold text-small">${text}</div>
+          <div class="text-muted" style="font-size: 11px;">${timestamp}</div>
+        `;
+        logContainer.appendChild(entry);
+        
+        // Keep only last 10 entries
+        while (logContainer.children.length > 10) {
+          logContainer.removeChild(logContainer.firstChild);
         }
+      }
 
-        function handleIgnore(ex) {
-          const reason = prompt('Enter reason to ignore:');
-          if (!reason) return;
-          ex.status = 'ignored';
-          ex.ignoreReason = reason;
-          renderExceptions();
+      // Demo Functions
+      function loadDemo() {
+        logDecision('Demo workspace loaded - Salesforce Lightning theme active');
+        alert('Demo data loaded! Navigate between sections using the left menu or ⌘K command palette.');
+      }
+
+      // Accessibility
+      document.addEventListener('keydown', (e) => {
+        // Tab trapping for modal dialogs would go here
+        if (e.key === 'Tab' && document.querySelector('.cmd-palette.active')) {
+          // Focus management for command palette
         }
-
-        /* Reconciliation */
-        function computeReconciliation(ps, pe) {
-          const gl = Store.getDataset('GL');
-          const crm = Store.getDataset('CRM');
-          const hr = Store.getDataset('HR');
-          // Heuristic mapping: Cloud → 4000 Revenue; ProServ → 4000 Revenue (Services); HR to 6000 Opex
-          addDecision(`Recon: Using heuristic account mapping for subledgers`);
-
-          const inPeriod = (d) => { const x = toDate(d); return x && x >= ps && x <= pe; };
-          const sum = (arr) => arr.reduce((a,b) => a + (Number(b)||0), 0);
-
-          // CRM bookings to revenue expectation (simple): sum by Product
-          const crmIn = crm.filter(r => inPeriod(r.Date));
-          const crmToGl = new Map();
-          crmIn.forEach(r => {
-            const acc = '4000 Revenue';
-            const key = `${acc}|${r.Product||'Cloud'}`; // product channel
-            crmToGl.set(key, (crmToGl.get(key)||0) + Number(r.BookedAmount||0));
-          });
-
-          // HR payroll to Opex 6000
-          const hrIn = hr.filter(r => inPeriod(r.Date));
-          const hrToGl = new Map();
-          hrIn.forEach(r => {
-            const acc = '6000 Opex';
-            const key = `${acc}|${r.Dept||'Unassigned'}`;
-            const monthly = Number(r.Headcount||0) * Number(r.AvgComp||0) / 12;
-            hrToGl.set(key, (hrToGl.get(key)||0) + (Number.isFinite(monthly) ? monthly : 0));
-          });
-
-          // GL actuals aggregated by Account|Product or Account|Dept accordingly
-          const glIn = gl.filter(r => inPeriod(r.Date));
-          const glAgg = new Map();
-          glIn.forEach(r => {
-            const acc = r.Account || 'Unassigned';
-            const key = acc.startsWith('4000') ? `${acc}|${r.Product||'Cloud'}` : acc.startsWith('6000') ? `${acc}|${r.Dept||'Unassigned'}` : `${acc}|*`;
-            glAgg.set(key, (glAgg.get(key)||0) + Number(r.Amount||0));
-          });
-
-          // Build tie-out rows
-          const tieRows = [];
-          const keys = new Set([...glAgg.keys(), ...crmToGl.keys(), ...hrToGl.keys()]);
-          keys.forEach(k => {
-            const [acc, dim] = k.split('|');
-            const glAmt = glAgg.get(k) || 0;
-            const crmAmt = acc.startsWith('4000') ? (crmToGl.get(k) || 0) : 0;
-            const hrAmt = acc.startsWith('6000') ? (hrToGl.get(k) || 0) : 0;
-            const subledger = crmAmt + hrAmt;
-            const variance = glAmt - subledger;
-            tieRows.push({ Account: acc, Dimension: dim, GL: glAmt, Subledger: subledger, Variance: variance });
-          });
-
-          // Debits = Credits check
-          const hasDC = glIn.some(r => r['Debit/Credit']);
-          let debits = 0, credits = 0;
-          if (hasDC) {
-            glIn.forEach(r => { const amt = Number(r.Amount||0); if ((r['Debit/Credit']||'').toUpperCase().startsWith('D')) debits += Math.abs(amt); else credits += Math.abs(amt); });
-          }
-
-          // Roll-forward for Deferred Revenue (use Account contains 'Deferred Revenue' or 2400)
-          const isDefRev = (a) => /deferred revenue|^2400/i.test(String(a||''));
-          const glByAcc = (accPred) => gl.filter(r => accPred(r.Account));
-          // naive opening/closing based on ps-1, pe
-          const beforePs = gl.filter(r => { const d = toDate(r.Date); return d && d < ps; });
-          const uptoPe = gl.filter(r => { const d = toDate(r.Date); return d && d <= pe; });
-          const opening = sum(beforePs.filter(r => isDefRev(r.Account)).map(r => Number(r.Amount||0)));
-          const closing = sum(uptoPe.filter(r => isDefRev(r.Account)).map(r => Number(r.Amount||0)));
-          const increases = sum(glIn.filter(r => isDefRev(r.Account) && Number(r.Amount||0) > 0).map(r => Number(r.Amount||0)));
-          const decreases = sum(glIn.filter(r => isDefRev(r.Account) && Number(r.Amount||0) < 0).map(r => Math.abs(Number(r.Amount||0))));
-          const rf_ok = Math.abs((opening + increases - decreases) - closing) < 1e-6;
-
-          return { tieRows, hasDC, debits, credits, rf: { opening, increases, decreases, closing, ok: rf_ok } };
-        }
-
-        function renderReconciliation(rec) {
-          const fmt = (n) => Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
-          const passFail = (ok) => `<span class="chip ${ok ? 'pass' : 'fail'}">${ok ? 'PASS' : 'FAIL'}</span>`;
-          const container = document.createElement('div');
-          // Tie-out table
-          const tie = document.createElement('div'); tie.className = 'dataset-card';
-          const tieHead = document.createElement('div'); tieHead.className = 'dataset-header'; tieHead.innerHTML = '<strong>Subledger → GL tie-out</strong>';
-          const tieBody = document.createElement('div'); tieBody.className = 'dataset-body';
-          const tbl = document.createElement('table'); tbl.className = 'data-table';
-          const columns = ['Account','Dimension','GL','Subledger','Variance'];
-          tbl.appendChild(createTable(rec.tieRows, columns).querySelector('thead'));
-          const tb = document.createElement('tbody');
-          rec.tieRows.forEach(r => {
-            const tr = document.createElement('tr');
-            columns.forEach(c => {
-              const td = document.createElement('td');
-              const val = (c==='GL' || c==='Subledger' || c==='Variance') ? fmt(r[c]) : r[c];
-              td.innerHTML = (c==='Variance' && Math.abs(r[c])>1e-6) ? `<span style="color:var(--warn)">${val}</span>` : String(val);
-              tr.appendChild(td);
-            });
-            tb.appendChild(tr);
-          });
-          tbl.appendChild(tb); tieBody.appendChild(tbl); tie.appendChild(tieHead); tie.appendChild(tieBody);
-
-          // Debits = Credits
-          const dc = document.createElement('div'); dc.className = 'dataset-card';
-          const dcHead = document.createElement('div'); dcHead.className = 'dataset-header';
-          if (rec.hasDC) dcHead.innerHTML = `<strong>Debits = Credits</strong> ${passFail(Math.abs(rec.debits - rec.credits) < 1e-6)} <span class="chip">Debits ${fmt(rec.debits)}</span> <span class="chip">Credits ${fmt(rec.credits)}</span>`;
-          else dcHead.innerHTML = '<strong>Debits = Credits</strong> <span class="chip">N/A (no Debit/Credit column)</span>';
-          dc.appendChild(dcHead);
-
-          // Roll-forward
-          const rf = document.createElement('div'); rf.className = 'dataset-card';
-          const rfHead = document.createElement('div'); rfHead.className = 'dataset-header'; rfHead.innerHTML = `<strong>Deferred Revenue Roll-forward</strong> ${passFail(rec.rf.ok)}`;
-          const rfBody = document.createElement('div'); rfBody.className = 'dataset-body';
-          rfBody.innerHTML = `<div class="chip">Opening ${fmt(rec.rf.opening)}</div> <div class="chip">Increases ${fmt(rec.rf.increases)}</div> <div class="chip">Decreases ${fmt(rec.rf.decreases)}</div> <div class="chip">Closing ${fmt(rec.rf.closing)}</div>`;
-          rf.appendChild(rfHead); rf.appendChild(rfBody);
-
-          reconBody.innerHTML = '';
-          reconBody.appendChild(tie);
-          reconBody.appendChild(dc);
-          reconBody.appendChild(rf);
-
-          // Links to underlying rows (basic): clicking a tie-out row filters exceptions by account
-          // For now, we’ll add click to open a small list modal
-          tbl.addEventListener('click', (e) => {
-            const tr = e.target.closest('tr'); if (!tr) return;
-            const idx = Array.from(tr.parentElement.children).indexOf(tr);
-            const row = rec.tieRows[idx]; if (!row) return;
-            openUnderlyingRowsModal(row);
-          });
-        }
-
-        function openUnderlyingRowsModal(row) {
-          const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-          const modal = document.createElement('div'); modal.className = 'modal';
-          const header = document.createElement('header'); header.innerHTML = `<strong>Rows for ${row.Account} • ${row.Dimension}</strong>`;
-          const closeBtn = document.createElement('button'); closeBtn.className = 'button ghost'; closeBtn.textContent = 'Close'; header.appendChild(closeBtn);
-          const content = document.createElement('div'); content.className = 'content';
-          const ps = toDate(periodStart.value || ''); const pe = toDate(periodEnd.value || '');
-          const gl = Store.getDataset('GL').filter(r => { const d = toDate(r.Date); return d && d>=ps && d<=pe; });
-          const subset = gl.filter(r => String(r.Account||'').startsWith(row.Account.slice(0,4)) && (row.Account.startsWith('4000') ? (String(r.Product||'') === row.Dimension) : (row.Account.startsWith('6000') ? (String(r.Dept||'') === row.Dimension) : true)));
-          content.appendChild(createTable(subset, ['Date','Account','Dept','Product','Currency','Amount','Memo','DocumentID']));
-          const footer = document.createElement('footer');
-          const close2 = document.createElement('button'); close2.className = 'button primary'; close2.textContent = 'Done'; footer.appendChild(close2);
-          modal.appendChild(header); modal.appendChild(content); modal.appendChild(footer);
-          overlay.appendChild(modal); document.body.appendChild(overlay); overlay.style.display = 'flex';
-          closeBtn.onclick = close2.onclick = () => document.body.removeChild(overlay);
-        }
-
-        async function addDecision(text) {
-          const list = qs('#decisionList');
-          if (!list) return;
-          const li = document.createElement('li'); li.className = 'decision-item';
-          const time = new Date().toLocaleString();
-          li.textContent = `${text} — ${time}`;
-          list.prepend(li);
-          if (DB.decisions && DB.decisions.add) { await DB.decisions.add({ timestamp: Date.now(), text }); }
-        }
-
-        /* Snapshots list and Audit export */
-        const snapshotList = qs('#snapshotList');
-        const exportAuditCsvBtn = qs('#exportAuditCsv');
-        const exportWorkspaceBtn = qs('#exportWorkspace');
-        const exportWorkspaceEncBtn = qs('#exportWorkspaceEnc');
-        const importWorkspaceBtn = qs('#importWorkspaceBtn');
-        const importWorkspaceInput = qs('#importWorkspaceInput');
-        const importWorkspaceEncBtn = qs('#importWorkspaceEncBtn');
-        const importWorkspaceEncInput = qs('#importWorkspaceEncInput');
-
-        async function renderSnapshots() {
-          if (!snapshotList || !DB.snapshots || !DB.snapshots.toArray) return;
-          const arr = await DB.snapshots.toArray();
-          snapshotList.innerHTML = '';
-          if (arr.length === 0) { snapshotList.innerHTML = '<div class="notice">No snapshots yet.</div>'; return; }
-          const table = document.createElement('table'); table.className = 'data-table';
-          const rows = arr.map(s => ({ ID: s.id || '', Timestamp: new Date(s.timestamp).toLocaleString(), Summary: s.summary || '' }));
-          table.appendChild(createTable(rows, ['ID','Timestamp','Summary']));
-          snapshotList.appendChild(table);
-        }
-
-        exportAuditCsvBtn.addEventListener('click', async () => {
-          const arr = (DB.audit && DB.audit.toArray) ? await DB.audit.toArray() : [];
-          const rows = arr.map(a => ({
-            snapshot_id: a.snapshotId || '',
-            timestamp: new Date(a.timestamp).toISOString(),
-            action: a.action,
-            entity: a.entity,
-            before_hash: a.beforeHash || '',
-            after_hash: a.afterHash || '',
-            note: a.note || ''
-          }));
-          const csv = toCsv(rows);
-          downloadText('audit_log.csv', csv);
-        });
-
-        exportWorkspaceBtn.addEventListener('click', async () => {
-          const datasets = (DB.datasets && DB.datasets.toArray) ? await DB.datasets.toArray() : [];
-          const snapshots = (DB.snapshots && DB.snapshots.toArray) ? await DB.snapshots.toArray() : [];
-          const audit = (DB.audit && DB.audit.toArray) ? await DB.audit.toArray() : [];
-          const decisions = (DB.decisions && DB.decisions.toArray) ? await DB.decisions.toArray() : [];
-          const payload = { version: 1, exportedAt: Date.now(), datasets, snapshots, audit, decisions };
-          downloadText('workspace.fpa.json', JSON.stringify(payload));
-        });
-
-        exportWorkspaceEncBtn.addEventListener('click', async () => {
-          const datasets = (DB.datasets && DB.datasets.toArray) ? await DB.datasets.toArray() : [];
-          const snapshots = (DB.snapshots && DB.snapshots.toArray) ? await DB.snapshots.toArray() : [];
-          const audit = (DB.audit && DB.audit.toArray) ? await DB.audit.toArray() : [];
-          const decisions = (DB.decisions && DB.decisions.toArray) ? await DB.decisions.toArray() : [];
-          const payload = { version: 1, exportedAt: Date.now(), datasets, snapshots, audit, decisions };
-          openPassphraseModal('Encrypt Export', async (passphrase) => {
-            try {
-              const enc = await encryptJson(payload, passphrase);
-              downloadText('workspace.encrypted.fpa.json', JSON.stringify(enc));
-              toast('Encrypted workspace exported');
-            } catch (e) {
-              toast('Encryption failed: ' + (e.message || e));
-            }
-          });
-        });
-
-        importWorkspaceBtn.addEventListener('click', () => importWorkspaceInput.click());
-        importWorkspaceInput.addEventListener('change', async (e) => {
-          const file = e.target.files && e.target.files[0]; if (!file) return;
-          const text = await readText(file);
-          const data = JSON.parse(text);
-          // simple import replace
-          if (data && Array.isArray(data.datasets)) {
-            for (const d of data.datasets) { await Store.putDataset(d.name, d.rows || []); }
-          }
-          if (data && Array.isArray(data.snapshots) && DB.snapshots && DB.snapshots.add) {
-            for (const s of data.snapshots) { await DB.snapshots.add(s); }
-          }
-          if (data && Array.isArray(data.audit) && DB.audit && DB.audit.add) {
-            for (const a of data.audit) { await DB.audit.add(a); }
-          }
-          if (data && Array.isArray(data.decisions) && DB.decisions && DB.decisions.add) {
-            for (const d2 of data.decisions) { await DB.decisions.add(d2); }
-          }
-          renderDataPreview();
-          renderSnapshots();
-          toast('Workspace imported');
-          activate('audit');
-        });
-
-        importWorkspaceEncBtn.addEventListener('click', () => importWorkspaceEncInput.click());
-        importWorkspaceEncInput.addEventListener('change', async (e) => {
-          const file = e.target.files && e.target.files[0]; if (!file) return;
-          const text = await readText(file);
-          let obj;
-          try { obj = JSON.parse(text); } catch { toast('Invalid encrypted file'); return; }
-          openPassphraseModal('Decrypt Import', async (passphrase, statusEl) => {
-            try {
-              const data = await decryptJson(obj, passphrase);
-              if (data && Array.isArray(data.datasets)) { for (const d of data.datasets) { await Store.putDataset(d.name, d.rows || []); } }
-              if (data && Array.isArray(data.snapshots) && DB.snapshots && DB.snapshots.add) { for (const s of data.snapshots) { await DB.snapshots.add(s); } }
-              if (data && Array.isArray(data.audit) && DB.audit && DB.audit.add) { for (const a of data.audit) { await DB.audit.add(a); } }
-              if (data && Array.isArray(data.decisions) && DB.decisions && DB.decisions.add) { for (const d2 of data.decisions) { await DB.decisions.add(d2); } }
-              renderDataPreview();
-              renderSnapshots();
-              toast('Encrypted workspace imported');
-              activate('audit');
-            } catch (err) {
-              if (statusEl) statusEl.textContent = 'Decryption failed. Check passphrase.';
-              toast('Decryption failed');
-            }
-          }, true);
-        });
-
-        function toCsv(rows) {
-          if (!rows.length) return '';
-          const cols = Object.keys(rows[0]);
-          const esc = (v) => {
-            const s = String(v ?? '');
-            return /[",\n]/.test(s) ? '"' + s.replaceAll('"','""') + '"' : s;
-          };
-          const lines = [cols.join(',')];
-          rows.forEach(r => lines.push(cols.map(c => esc(r[c])).join(',')));
-          return lines.join('\n');
-        }
-
-        function downloadText(filename, text) {
-          const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 0);
-        }
-
-        // Crypto helpers: PBKDF2 -> AES-GCM
-        async function deriveKey(passphrase, salt, iterations=150000) {
-          const enc = new TextEncoder();
-          const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
-          return crypto.subtle.deriveKey(
-            { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-            keyMaterial,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['encrypt','decrypt']
-          );
-        }
-        function randBytes(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
-        function b64(bytes) { return btoa(String.fromCharCode(...bytes)); }
-        function fromB64(s) { return new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0))); }
-
-        async function encryptJson(obj, passphrase) {
-          const salt = randBytes(16);
-          const iv = randBytes(12);
-          const key = await deriveKey(passphrase, salt);
-          const data = new TextEncoder().encode(JSON.stringify(obj));
-          const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
-          const out = new Uint8Array(ct);
-          return { v: 1, alg: 'PBKDF2-SHA256+AES-256-GCM', salt: b64(salt), iv: b64(iv), ct: b64(out) };
-        }
-
-        async function decryptJson(payload, passphrase) {
-          const salt = fromB64(payload.salt);
-          const iv = fromB64(payload.iv);
-          const ct = fromB64(payload.ct);
-          const key = await deriveKey(passphrase, salt);
-          const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-          const text = new TextDecoder().decode(pt);
-          return JSON.parse(text);
-        }
-
-        function openPassphraseModal(title, onSubmit, isDecrypt) {
-          const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-          const modal = document.createElement('div'); modal.className = 'modal';
-          const header = document.createElement('header'); header.innerHTML = `<strong>${title}</strong>`;
-          const closeBtn = document.createElement('button'); closeBtn.className = 'button ghost'; closeBtn.textContent = 'Close'; header.appendChild(closeBtn);
-          const content = document.createElement('div'); content.className = 'content';
-          const label = document.createElement('div'); label.textContent = 'Passphrase';
-          const input = document.createElement('input'); input.type = 'password'; input.placeholder = 'Enter passphrase'; input.style.padding = '8px 10px'; input.style.border = '1px solid var(--border)'; input.style.borderRadius = '8px'; input.style.width = '100%';
-          const meter = document.createElement('div'); meter.className = 'meter'; const bar = document.createElement('div'); bar.className = 'meter-bar'; meter.appendChild(bar);
-          const hint = document.createElement('div'); hint.style.fontSize = '12px'; hint.style.color = 'var(--muted)'; hint.textContent = 'Use 12+ chars with mixed case, numbers, symbols.';
-          const status = document.createElement('div'); status.style.fontSize = '12px'; status.style.color = 'var(--warn)'; status.style.minHeight = '18px';
-          content.appendChild(label); content.appendChild(input); content.appendChild(meter); content.appendChild(hint); content.appendChild(status);
-          const footer = document.createElement('footer');
-          const cancel = document.createElement('button'); cancel.className = 'button'; cancel.textContent = 'Cancel';
-          const ok = document.createElement('button'); ok.className = 'button primary'; ok.textContent = isDecrypt ? 'Decrypt' : 'Encrypt';
-          footer.appendChild(cancel); footer.appendChild(ok);
-          modal.appendChild(header); modal.appendChild(content); modal.appendChild(footer);
-          overlay.appendChild(modal); document.body.appendChild(overlay); overlay.style.display = 'flex';
-          closeBtn.onclick = cancel.onclick = () => document.body.removeChild(overlay);
-
-          function strength(pw) {
-            let s = 0; if (pw.length >= 8) s++; if (pw.length >= 12) s++; if (/[A-Z]/.test(pw)) s++; if (/[a-z]/.test(pw)) s++; if (/[0-9]/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++;
-            const pct = Math.min(100, s * 16);
-            bar.style.width = pct + '%';
-            bar.classList.toggle('ok', pct >= 48);
-            bar.classList.toggle('strong', pct >= 72);
-          }
-          input.addEventListener('input', () => strength(input.value));
-          strength('');
-
-          ok.onclick = async () => {
-            const pw = input.value || '';
-            if (!isDecrypt && pw.length < 8) { status.textContent = 'Passphrase too short'; return; }
-            try { await onSubmit(pw, status); document.body.removeChild(overlay); } catch (e) { status.textContent = 'Operation failed.'; }
-          };
-        }
-
-        // Initial UI hydrate
-        renderSnapshots();
-      })();
+      });
     </script>
   </body>
-  </html>
-
-
+</html>
