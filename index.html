@@ -206,6 +206,7 @@
       .spinner { width: 16px; height: 16px; border:2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
       @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
       .chart-canvas { width: 100%; height: 240px; display: block; }
+      input[type=range] { display: none; }
 
       /* Print (Close Pack) */
       @media print {
@@ -263,6 +264,7 @@
           <div class="preview-section">
             <h3 style="margin-bottom:8px">Data Preview</h3>
             <div id="dataPreview"></div>
+            <div class="notice" style="margin-top:8px">Tip: Import actuals for this month, then go to Validate → Analyze → Forecast to see the full flow.</div>
           </div>
         </section>
         <section id="view-validate" class="view">
@@ -273,6 +275,7 @@
             <button id="runValidation" class="button primary">Run Validation</button>
             <span id="validationMsg" class="chip">Ready</span>
           </div>
+          <div class="notice">Goal: Clean data before analysis. Resolve exceptions or add ignores with reasons. Debits=Credits and roll-forward checks below.</div>
           <div class="summary-cards" id="validationSummary"></div>
           <div class="filters">
             <select id="filterRule">
@@ -341,6 +344,7 @@
             <button id="anNext" class="button">▶</button>
             <button id="runAnalysis" class="button primary">Run Analysis</button>
           </div>
+          <div class="notice">Goal: Understand performance. Choose the comparison, set a month, and drill from Account → Dept → Product.</div>
           <div class="drillbar">
             <span class="crumb" id="crumb-level">Account</span>
             <span class="crumb" id="crumb-path"></span>
@@ -375,9 +379,16 @@
             <label>Period <input id="fcPeriod" placeholder="YYYY-MM" style="width:120px" /></label>
             <button id="runForecast" class="button primary">Run Forecast</button>
           </div>
+          <div class="notice">Goal: Project the next period with drivers. Save scenarios A/B/C and compare deltas vs Actuals and Budget.</div>
           <div class="dataset-card">
             <div class="dataset-header"><strong>Drivers</strong> <span style="color:var(--muted); font-size:12px">Revenue, COGS, Headcount & Comp</span></div>
             <div class="dataset-body">
+              <div class="ingest-actions" style="margin-bottom:6px">
+                <span class="chip">What‑if:</span>
+                <button id="wiUpside" class="button">Upside (+10% rev, +3 Sales, COGS 24%)</button>
+                <button id="wiDownside" class="button">Downside (−5% rev, −2 Sales, COGS 28%)</button>
+                <button id="wiEfficiency" class="button">Efficiency (COGS −3 pts, +2 Sales, −1 Mkt)</button>
+              </div>
               <div class="grid">
                 <div class="mapping-row"><label>Revenue growth %</label><input id="drvRevGrowth" type="number" step="0.1" value="5" /></div>
                 <div class="mapping-row"><label>COGS % of revenue</label><input id="drvCogsPct" type="number" step="0.1" value="25" /></div>
@@ -402,6 +413,11 @@
                   <div class="mapping-row"><label>Baseline hours/month</label><input id="opsBaseline" type="number" step="1" value="120" /></div>
                   <div class="mapping-row"><label>$ Rate per hour</label><input id="opsRate" type="number" step="1" value="100" /></div>
                 </div>
+                <div class="grid" style="margin-top:8px">
+                  <div class="mapping-row"><label>Rows processed</label><input id="opsRows" type="number" step="100" value="0" /></div>
+                  <div class="mapping-row"><label>Exceptions resolved</label><input id="opsResolved" type="number" step="1" value="0" /></div>
+                  <div class="mapping-row"><label>Auto tie-outs</label><input id="opsAutoTieouts" type="number" step="1" value="0" /></div>
+                </div>
                 <div style="margin-top:8px" id="opsMetrics"></div>
               </div>
             </div>
@@ -415,6 +431,7 @@
             <button id="selfTest" class="button">Run Self-Test</button>
             <span id="selfTestStatus" class="chip">Idle</span>
           </div>
+          <div class="notice">Goal: Produce a Close Pack in one click. Preview and export to PDF or use Print → Save as PDF offline.</div>
           <div class="dataset-card" id="closePackPreview">
             <div class="dataset-header"><strong>Close Pack Preview</strong> <span style="color:var(--muted); font-size:12px">Executive Summary, KPIs, Variance Bridges, Dept Rollups, Footnotes</span></div>
             <div class="dataset-body" id="closePackBody"></div>
@@ -563,9 +580,9 @@
 
         // Ops Time Tax estimation
         function estimateOpsTimeSaved(glRows, exceptions, recon) {
-          const rowsProcessed = glRows.length;
-          const exceptionsResolved = (exceptions || []).filter(e => e.status === 'resolved').length;
-          const autoTieOuts = (recon && Array.isArray(recon.tieRows)) ? recon.tieRows.filter(r => Math.abs(r.Variance) < 1e-6).length : 0;
+          const rowsProcessed = Number(qs('#opsRows')?.value || glRows.length || 0);
+          const exceptionsResolved = Number(qs('#opsResolved')?.value || (exceptions || []).filter(e => e.status === 'resolved').length || 0);
+          const autoTieOuts = Number(qs('#opsAutoTieouts')?.value || ((recon && Array.isArray(recon.tieRows)) ? recon.tieRows.filter(r => Math.abs(r.Variance) < 1e-6).length : 0) || 0);
           // Heuristic: 0.02 hr per GL row + 0.25 hr per resolved exception + 0.1 hr per auto tie-out
           const hours = rowsProcessed * 0.02 + exceptionsResolved * 0.25 + autoTieOuts * 0.1;
           return Math.round(hours * 10) / 10;
@@ -618,23 +635,135 @@
           };
         }
 
-        function renderForecastSummary(res) {
+        function renderForecastSummary(res, month) {
           const root = forecastSummaryRoot();
-          const fmt = (n) => Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-          const rows = [
-            { Metric: 'Revenue', Actual: fmt(res.actual.rev), Budget: fmt(res.budget.rev), Forecast: fmt(res.forecast.rev), 'Δ F - A': fmt(res.forecast.rev - res.actual.rev), 'Δ F - B': fmt(res.forecast.rev - res.budget.rev) },
-            { Metric: 'COGS', Actual: fmt(res.actual.cogs), Budget: fmt(res.budget.cogs), Forecast: fmt(res.forecast.cogs), 'Δ F - A': fmt(res.forecast.cogs - res.actual.cogs), 'Δ F - B': fmt(res.forecast.cogs - res.budget.cogs) },
-            { Metric: 'Gross Profit', Actual: fmt(res.actual.gp), Budget: fmt(res.budget.gp), Forecast: fmt(res.forecast.gp), 'Δ F - A': fmt(res.forecast.gp - res.actual.gp), 'Δ F - B': fmt(res.forecast.gp - res.budget.gp) },
-            { Metric: 'Opex', Actual: fmt(res.actual.opex), Budget: fmt(res.budget.opex), Forecast: fmt(res.forecast.opex), 'Δ F - A': fmt(res.forecast.opex - res.actual.opex), 'Δ F - B': fmt(res.forecast.opex - res.budget.opex) },
-            { Metric: 'Operating Income', Actual: fmt(res.actual.opi), Budget: fmt(res.budget.opi), Forecast: fmt(res.forecast.opi), 'Δ F - A': fmt(res.forecast.opi - res.actual.opi), 'Δ F - B': fmt(res.forecast.opi - res.budget.opi) }
-          ];
+          const fmt0 = (n) => Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
           root.innerHTML = '';
-          root.appendChild(createTable(rows, Object.keys(rows[0])));
+          
+          // Get current scenario info
+          const currentKey = scenSelect().value;
+          const currentScenario = scenarioCache.get(currentKey) || scenarioDefaults;
+          
+          // Calculate all scenarios for comparison
+          const scenarioResults = {};
+          for (const key of SCEN_KEYS) {
+            let scen = scenarioCache.get(key);
+            // Ensure we have distinct scenario data
+            if (!scen || !scen.name) {
+              const defaults = {
+                A: { name: 'Base Case', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 },
+                B: { name: 'Upside', revGrowthPct: 15, cogsPct: 24, hc: { Sales:3, 'R&D':2, Marketing:1, 'G&A':0 }, compPct: 5 },
+                C: { name: 'Downside', revGrowthPct: -5, cogsPct: 28, hc: { Sales:-2, 'R&D':-1, Marketing:-1, 'G&A':0 }, compPct: -2 }
+              };
+              scen = defaults[key] || { ...scenarioDefaults };
+              scenarioCache.set(key, scen);
+            }
+            scenarioResults[key] = runForecastCalc(month || '2024-03', scen);
+          }
+          
+          // Create comparison table with all scenarios
+          const compareRows = [
+            { 
+              Metric: 'Revenue', 
+              Actual: fmt0(res.actual.rev), 
+              Budget: fmt0(res.budget.rev),
+              'Scenario A': fmt0(scenarioResults.A.forecast.rev),
+              'Scenario B': fmt0(scenarioResults.B.forecast.rev),
+              'Scenario C': fmt0(scenarioResults.C.forecast.rev),
+              'Current': fmt0(res.forecast.rev)
+            },
+            { 
+              Metric: 'COGS', 
+              Actual: fmt0(res.actual.cogs), 
+              Budget: fmt0(res.budget.cogs),
+              'Scenario A': fmt0(scenarioResults.A.forecast.cogs),
+              'Scenario B': fmt0(scenarioResults.B.forecast.cogs),
+              'Scenario C': fmt0(scenarioResults.C.forecast.cogs),
+              'Current': fmt0(res.forecast.cogs)
+            },
+            { 
+              Metric: 'Gross Profit', 
+              Actual: fmt0(res.actual.gp), 
+              Budget: fmt0(res.budget.gp),
+              'Scenario A': fmt0(scenarioResults.A.forecast.gp),
+              'Scenario B': fmt0(scenarioResults.B.forecast.gp),
+              'Scenario C': fmt0(scenarioResults.C.forecast.gp),
+              'Current': fmt0(res.forecast.gp)
+            },
+            { 
+              Metric: 'Opex', 
+              Actual: fmt0(res.actual.opex), 
+              Budget: fmt0(res.budget.opex),
+              'Scenario A': fmt0(scenarioResults.A.forecast.opex),
+              'Scenario B': fmt0(scenarioResults.B.forecast.opex),
+              'Scenario C': fmt0(scenarioResults.C.forecast.opex),
+              'Current': fmt0(res.forecast.opex)
+            },
+            { 
+              Metric: 'Operating Income', 
+              Actual: fmt0(res.actual.opi), 
+              Budget: fmt0(res.budget.opi),
+              'Scenario A': fmt0(scenarioResults.A.forecast.opi),
+              'Scenario B': fmt0(scenarioResults.B.forecast.opi),
+              'Scenario C': fmt0(scenarioResults.C.forecast.opi),
+              'Current': fmt0(res.forecast.opi)
+            }
+          ];
+          
+          // Add header showing current scenario
+          const header = document.createElement('div');
+          header.style.marginBottom = '8px';
+          header.style.fontWeight = 'bold';
+          header.style.color = 'var(--primary)';
+          header.innerHTML = `Scenario Comparison - Current: ${currentKey} "${currentScenario.name || 'Unnamed'}"`;
+          root.appendChild(header);
+          
+          const cols = ['Metric','Actual','Budget','Scenario A','Scenario B','Scenario C','Current'];
+          root.appendChild(createTable(compareRows, cols));
+
+          // Current scenario driver inputs snapshot
+          const inputs = [
+            { Driver: 'Revenue growth %', Value: `${currentScenario.revGrowthPct}%` },
+            { Driver: 'COGS % of revenue', Value: `${currentScenario.cogsPct}%` },
+            { Driver: 'Sales HC Δ', Value: currentScenario.hc.Sales||0 },
+            { Driver: 'R&D HC Δ', Value: currentScenario.hc['R&D']||0 },
+            { Driver: 'Marketing HC Δ', Value: currentScenario.hc.Marketing||0 },
+            { Driver: 'G&A HC Δ', Value: currentScenario.hc['G&A']||0 },
+            { Driver: 'Comp change %', Value: `${currentScenario.compPct}%` }
+          ];
+          const div = document.createElement('div'); 
+          div.style.marginTop = '12px';
+          const driverHeader = document.createElement('div');
+          driverHeader.style.fontWeight = 'bold';
+          driverHeader.style.marginBottom = '4px';
+          driverHeader.textContent = `Current Scenario (${currentKey}) Drivers:`;
+          div.appendChild(driverHeader);
+          div.appendChild(createTable(inputs, ['Driver','Value']));
+          root.appendChild(div);
         }
 
         // Wire forecast UI
         (async function initForecast() {
-          for (const k of SCEN_KEYS) { await loadScenario(k); }
+          // Set up default scenarios if they don't exist
+          const defaultScenarios = {
+            A: { name: 'Base Case', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 },
+            B: { name: 'Upside', revGrowthPct: 15, cogsPct: 24, hc: { Sales:3, 'R&D':2, Marketing:1, 'G&A':0 }, compPct: 5 },
+            C: { name: 'Downside', revGrowthPct: -5, cogsPct: 28, hc: { Sales:-2, 'R&D':-1, Marketing:-1, 'G&A':0 }, compPct: -2 }
+          };
+          
+          for (const k of SCEN_KEYS) { 
+            const existing = await loadScenario(k);
+            // Always initialize with defaults if scenario is empty or has no meaningful data
+            if (!existing.name || existing.revGrowthPct === scenarioDefaults.revGrowthPct) {
+              await saveScenario(k, defaultScenarios[k]);
+              scenarioCache.set(k, defaultScenarios[k]);
+            }
+          }
+          
+          // Auto-fill period on load
+          const latestMonth = latestMonthFromGL(Store.getDataset('GL')) || '2024-03';
+          if (fcPeriod()) fcPeriod().value = latestMonth;
+          
           scenSelect().addEventListener('change', async () => {
             const key = scenSelect().value; const s = await loadScenario(key);
             scenName().value = s.name || '';
@@ -642,32 +771,93 @@
             drvCogsPct().value = s.cogsPct;
             drvHcSales().value = s.hc.Sales||0; drvHcRD().value = s.hc['R&D']||0; drvHcMkt().value = s.hc.Marketing||0; drvHcGA().value = s.hc['G&A']||0;
             drvCompPct().value = s.compPct||0;
+            
+            // Auto-refresh forecast summary when scenario changes
+            const month = fcPeriod().value || latestMonth;
+            if (month) {
+              const res = runForecastCalc(month, s);
+              renderForecastSummary(res, month);
+            }
           });
+          
+          // Initialize with Scenario A (Base Case)
+          scenSelect().value = 'A';
           scenSelect().dispatchEvent(new Event('change'));
+
+          function readDriversIntoScenario() {
+            return { name: scenName().value || scenSelect().value,
+              revGrowthPct: Number(drvRevGrowth().value||0), cogsPct: Number(drvCogsPct().value||0),
+              hc: { Sales:Number(drvHcSales().value||0), 'R&D':Number(drvHcRD().value||0), Marketing:Number(drvHcMkt().value||0), 'G&A':Number(drvHcGA().value||0) },
+              compPct: Number(drvCompPct().value||0) };
+          }
 
           saveScenarioBtn().addEventListener('click', async () => {
             const key = scenSelect().value;
-            const s = { name: scenName().value || key, revGrowthPct: Number(drvRevGrowth().value||0), cogsPct: Number(drvCogsPct().value||0), hc: { Sales:Number(drvHcSales().value||0), 'R&D':Number(drvHcRD().value||0), Marketing:Number(drvHcMkt().value||0), 'G&A':Number(drvHcGA().value||0) }, compPct: Number(drvCompPct().value||0) };
+            const s = readDriversIntoScenario();
             await saveScenario(key, s);
             toast(`Scenario ${key} saved`);
           });
 
-          runForecastBtn().addEventListener('click', () => {
-            const key = scenSelect().value; const s = scenarioCache.get(key) || scenarioDefaults;
-            const month = (fcPeriod().value || anPeriodInput.value || '').slice(0,7);
+          // Auto-update scenario when driver inputs change
+          function attachDriverListeners() {
+            const driverInputs = [drvRevGrowth(), drvCogsPct(), drvHcSales(), drvHcRD(), drvHcMkt(), drvHcGA(), drvCompPct(), scenName()];
+            driverInputs.forEach(input => {
+              if (input) {
+                input.addEventListener('input', () => {
+                  // Update current scenario in cache immediately
+                  const key = scenSelect().value;
+                  const updatedScenario = readDriversIntoScenario();
+                  scenarioCache.set(key, updatedScenario);
+                  
+                  // Refresh forecast summary with updated data
+                  const month = fcPeriod().value || '2024-03';
+                  const res = runForecastCalc(month, updatedScenario);
+                  renderForecastSummary(res, month);
+                });
+              }
+            });
+          }
+          attachDriverListeners();
+
+          function doRunForecast() {
+            const key = scenSelect().value; const s = readDriversIntoScenario();
+            let month = (fcPeriod().value || anPeriodInput.value || '').slice(0,7);
+            // Ensure a valid month exists; if not, default to latest GL month
+            if (!/^\d{4}-\d{2}$/.test(month)) {
+              const latest = latestMonthFromGL(Store.getDataset('GL'));
+              if (latest) { month = latest; const el = fcPeriod(); if (el) el.value = latest; }
+            }
             if (!month) { toast('Set forecast period YYYY-MM'); return; }
             busyOverlay.show('Forecasting...');
             requestAnimationFrame(() => {
               try {
                 const res = runForecastCalc(month, s);
-                renderForecastSummary(res);
+                // Always render summary; zeros will appear if no data present
+                renderForecastSummary(res, month);
                 renderOpsMetrics();
+                scenarioCache.set(key, s);
+                addDecision(`Forecast run for ${month}: Rev +${s.revGrowthPct}% | COGS ${s.cogsPct}% | HC Δ S:${s.hc.Sales} R:${s.hc['R&D']} M:${s.hc.Marketing} G:${s.hc['G&A']} | Comp ${s.compPct}%`);
               } finally { busyOverlay.hide(); }
             });
-          });
+          }
+          const rfBtnEl = runForecastBtn();
+          if (rfBtnEl) rfBtnEl.addEventListener('click', doRunForecast);
+          // Defensive: delegate in case the button is re-rendered by the browser/UI
+          document.addEventListener('click', (e) => { const t = e.target; if (t && t.id === 'runForecast') { e.preventDefault(); doRunForecast(); } });
 
           opsBaselineInput().addEventListener('input', renderOpsMetrics);
           opsRateInput().addEventListener('input', renderOpsMetrics);
+          qs('#opsRows').addEventListener('input', renderOpsMetrics);
+          qs('#opsResolved').addEventListener('input', renderOpsMetrics);
+          qs('#opsAutoTieouts').addEventListener('input', renderOpsMetrics);
+
+          // What-if presets
+          const wiUpside = document.getElementById('wiUpside');
+          const wiDownside = document.getElementById('wiDownside');
+          const wiEfficiency = document.getElementById('wiEfficiency');
+          if (wiUpside) wiUpside.addEventListener('click', () => { drvRevGrowth().value = 10; drvCogsPct().value = 24; drvHcSales().value = Number(drvHcSales().value||0) + 3; doRunForecast(); });
+          if (wiDownside) wiDownside.addEventListener('click', () => { drvRevGrowth().value = -5; drvCogsPct().value = 28; drvHcSales().value = Math.max(0, Number(drvHcSales().value||0) - 2); doRunForecast(); });
+          if (wiEfficiency) wiEfficiency.addEventListener('click', () => { drvCogsPct().value = Math.max(0, Number(drvCogsPct().value||0) - 3); drvHcSales().value = Number(drvHcSales().value||0) + 2; drvHcMkt().value = Math.max(0, Number(drvHcMkt().value||0) - 1); doRunForecast(); });
         })();
         // Busy overlay helpers
         const busyOverlay = (() => {
@@ -1392,11 +1582,49 @@
           await Store.putDataset('HR', DEMO_HR);
           await Store.putDataset('BUDGET', DEMO_BUDGET);
           renderDataPreview();
+          
+          // Reset scenarios to defaults
+          const defaultScenarios = {
+            A: { name: 'Base Case', revGrowthPct: 5, cogsPct: 25, hc: { Sales:0, 'R&D':0, Marketing:0, 'G&A':0 }, compPct: 0 },
+            B: { name: 'Upside', revGrowthPct: 15, cogsPct: 24, hc: { Sales:3, 'R&D':2, Marketing:1, 'G&A':0 }, compPct: 5 },
+            C: { name: 'Downside', revGrowthPct: -5, cogsPct: 28, hc: { Sales:-2, 'R&D':-1, Marketing:-1, 'G&A':0 }, compPct: -2 }
+          };
+          
+          for (const k of SCEN_KEYS) {
+            await saveScenario(k, defaultScenarios[k]);
+            scenarioCache.set(k, defaultScenarios[k]);
+          }
+          
+          // Auto-refresh forecast with demo data
+          const latestMonth = latestMonthFromGL(DEMO_GL) || '2024-03';
+          if (fcPeriod()) fcPeriod().value = latestMonth;
+          
+          // Load the current scenario into UI and refresh forecast
+          const currentKey = scenSelect().value;
+          const currentScenario = scenarioCache.get(currentKey) || defaultScenarios[currentKey];
+          
+          // Update UI with current scenario
+          scenName().value = currentScenario.name || '';
+          drvRevGrowth().value = currentScenario.revGrowthPct;
+          drvCogsPct().value = currentScenario.cogsPct;
+          drvHcSales().value = currentScenario.hc.Sales||0;
+          drvHcRD().value = currentScenario.hc['R&D']||0;
+          drvHcMkt().value = currentScenario.hc.Marketing||0;
+          drvHcGA().value = currentScenario.hc['G&A']||0;
+          drvCompPct().value = currentScenario.compPct||0;
+          
+          if (currentScenario) {
+            const res = runForecastCalc(latestMonth, currentScenario);
+            renderForecastSummary(res, latestMonth);
+          }
+          
           const ingestView = qs('#view-ingest');
           const msg = document.createElement('div'); msg.className = 'notice';
           msg.textContent = 'Demo workspace loaded. Preview shows embedded GL, CRM, HR, and Budget datasets.';
           ingestView.prepend(msg); setTimeout(() => msg.remove(), 3000);
           activate('ingest');
+          // After demo load, set sensible defaults for periods
+          setValidationPeriodDefaults();
         });
 
         // Keyboard shortcuts
@@ -1440,6 +1668,25 @@
         // Initial render if demo already loaded in this session (future: persist)
         renderDataPreview();
         renderEssentialsInHelp();
+        function setValidationPeriodDefaults() {
+          const gl = Store.getDataset('GL');
+          if (!gl.length) return;
+          const month = latestMonthFromGL(gl);
+          if (!month) return;
+          const psEl = qs('#periodStart');
+          const peEl = qs('#periodEnd');
+          const anEl = qs('#anPeriod');
+          const fcEl = qs('#fcPeriod');
+          const d = new Date(month + '-01T00:00:00Z');
+          const startStr = d.toISOString().slice(0,10);
+          const e = new Date(month + '-01T00:00:00Z'); e.setMonth(e.getMonth()+1); e.setDate(0);
+          const endStr = e.toISOString().slice(0,10);
+          if (psEl && !psEl.value) psEl.value = startStr;
+          if (peEl && !peEl.value) peEl.value = endStr;
+          if (anEl && !anEl.value) anEl.value = month;
+          if (fcEl && !fcEl.value) fcEl.value = month;
+        }
+        setValidationPeriodDefaults();
         /* Close Pack generation */
         const generateClosePackBtn = qs('#generateClosePack');
         const exportClosePackPdfBtn = qs('#exportClosePackPdf');
