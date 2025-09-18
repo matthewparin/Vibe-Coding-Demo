@@ -542,6 +542,7 @@
         
         AppState.currentView = view;
         updatePageTitle(view);
+        renderViewContent(view);
         logDecision(`Switched to ${view} view`);
       }
 
@@ -555,6 +556,469 @@
           audit: 'Audit Trail'
         };
         document.getElementById('pageTitle').textContent = titles[view] || view;
+      }
+
+      function renderViewContent(view) {
+        const content = document.getElementById('mainContent');
+        
+        switch(view) {
+          case 'ingest':
+            content.innerHTML = renderIngestView();
+            break;
+          case 'validate':
+            content.innerHTML = renderValidateView();
+            break;
+          case 'analyze':
+            content.innerHTML = renderAnalyzeView();
+            break;
+          case 'forecast':
+            content.innerHTML = renderForecastView();
+            break;
+          case 'report':
+            content.innerHTML = renderReportView();
+            break;
+          case 'audit':
+            content.innerHTML = renderAuditView();
+            break;
+          default:
+            content.innerHTML = renderDefaultView();
+        }
+      }
+
+      // View Content Renderers
+      function renderIngestView() {
+        return `
+          <div class="card">
+            <div class="card-header">
+              <h3>📁 Data Sources</h3>
+            </div>
+            <div class="card-body">
+              <p>Import CSV and Excel files for analysis. Supports drag-and-drop and file picker.</p>
+              
+              <div style="border: 2px dashed var(--border); border-radius: var(--r-md); padding: var(--s-5); text-align: center; margin: var(--s-4) 0; background: var(--muted);">
+                <div style="font-size: 48px; margin-bottom: var(--s-3);">📄</div>
+                <h4>Drop files here or click to browse</h4>
+                <p class="text-muted">Supports CSV, XLSX files up to 100MB</p>
+                <button class="btn btn-primary" onclick="triggerFileUpload()">Browse Files</button>
+              </div>
+
+              <div class="scenario-board">
+                <div class="scenario-card">
+                  <h4>GL Data</h4>
+                  <div class="text-muted text-small mb-3">General Ledger transactions</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Status:</span>
+                    <span class="font-weight-bold text-muted">No data</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Budget Data</h4>
+                  <div class="text-muted text-small mb-3">Budget allocations and forecasts</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Status:</span>
+                    <span class="font-weight-bold text-muted">No data</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>CRM Data</h4>
+                  <div class="text-muted text-small mb-3">Sales bookings and pipeline</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Status:</span>
+                    <span class="font-weight-bold text-muted">No data</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderValidateView() {
+        return `
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3>✓ Validation Rules</h3>
+            </div>
+            <div class="card-body">
+              <p>Run validation checks on imported data to identify exceptions and data quality issues.</p>
+              
+              <div class="d-flex gap-3 mb-4">
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">Period Start</label>
+                  <input type="date" class="form-input" value="2024-03-01">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">Period End</label>
+                  <input type="date" class="form-input" value="2024-03-31">
+                </div>
+                <div class="form-group" style="flex: 0 0 auto; align-self: end;">
+                  <button class="btn btn-primary" onclick="runValidation()">Run Validation</button>
+                </div>
+              </div>
+
+              <div class="scenario-board">
+                <div class="scenario-card">
+                  <h4>Data Quality</h4>
+                  <div class="text-muted text-small mb-3">Missing fields, format issues</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Issues Found:</span>
+                    <span class="font-weight-bold" style="color: var(--warn);">0</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Business Rules</h4>
+                  <div class="text-muted text-small mb-3">Duplicates, outliers, logic checks</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Exceptions:</span>
+                    <span class="font-weight-bold" style="color: var(--ok);">0</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Reconciliation</h4>
+                  <div class="text-muted text-small mb-3">Sub-ledger to GL tie-outs</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Variances:</span>
+                    <span class="font-weight-bold text-muted">Pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAnalyzeView() {
+        return `
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3>📊 Variance Analysis</h3>
+            </div>
+            <div class="card-body">
+              <p>Compare actual results against budget and prior periods. Identify trends and outliers.</p>
+              
+              <div class="d-flex gap-3 mb-4">
+                <div class="form-group">
+                  <label class="form-label">Analysis Period</label>
+                  <input type="month" class="form-input" value="2024-03">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Comparison</label>
+                  <select class="form-input">
+                    <option>Budget vs Actual</option>
+                    <option>MoM Variance</option>
+                    <option>YoY Variance</option>
+                  </select>
+                </div>
+                <div class="form-group" style="align-self: end;">
+                  <button class="btn btn-primary" onclick="runAnalysis()">Run Analysis</button>
+                </div>
+              </div>
+
+              <div style="height: 300px; background: var(--muted); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; margin: var(--s-4) 0;">
+                <div style="text-align: center; color: var(--text-muted);">
+                  <div style="font-size: 48px; margin-bottom: var(--s-2);">📈</div>
+                  <h4>Variance Chart</h4>
+                  <p>Load data and run analysis to see variance waterfall</p>
+                </div>
+              </div>
+
+              <div class="scenario-board">
+                <div class="scenario-card active">
+                  <h4>Revenue Variance</h4>
+                  <div class="text-muted text-small mb-3">Actual vs Budget comparison</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Variance:</span>
+                    <span class="font-weight-bold" style="color: var(--ok);">+2.3%</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Expense Variance</h4>
+                  <div class="text-muted text-small mb-3">Operating expense analysis</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Variance:</span>
+                    <span class="font-weight-bold" style="color: var(--warn);">-1.8%</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Margin Analysis</h4>
+                  <div class="text-muted text-small mb-3">Gross and operating margins</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Trend:</span>
+                    <span class="font-weight-bold" style="color: var(--ok);">Improving</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderForecastView() {
+        return `
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3>🔮 Scenario Planning</h3>
+            </div>
+            <div class="card-body">
+              <p>Create and compare multiple forecast scenarios. Build driver-based models for planning.</p>
+              
+              <div class="d-flex gap-3 mb-4">
+                <div class="form-group">
+                  <label class="form-label">Forecast Period</label>
+                  <input type="month" class="form-input" value="2024-04">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Scenario</label>
+                  <select class="form-input">
+                    <option>Scenario A - Base Case</option>
+                    <option>Scenario B - Upside</option>
+                    <option>Scenario C - Downside</option>
+                  </select>
+                </div>
+                <div class="form-group" style="align-self: end;">
+                  <button class="btn btn-primary" onclick="runForecast()">Run Forecast</button>
+                </div>
+              </div>
+
+              <div class="scenario-board">
+                <div class="scenario-card active">
+                  <h4>Base Case</h4>
+                  <div class="text-muted text-small mb-3">Conservative growth assumptions</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">+5%</span>
+                  </div>
+                  <div class="d-flex justify-content-between mt-2">
+                    <span>COGS %:</span>
+                    <span class="font-weight-bold">25%</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Upside</h4>
+                  <div class="text-muted text-small mb-3">Optimistic market conditions</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold" style="color: var(--ok);">+15%</span>
+                  </div>
+                  <div class="d-flex justify-content-between mt-2">
+                    <span>COGS %:</span>
+                    <span class="font-weight-bold">24%</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Downside</h4>
+                  <div class="text-muted text-small mb-3">Economic headwinds</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold" style="color: var(--warn);">-5%</span>
+                  </div>
+                  <div class="d-flex justify-content-between mt-2">
+                    <span>COGS %:</span>
+                    <span class="font-weight-bold">28%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top: var(--s-5);">
+                <h4>Driver Inputs</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); margin-top: var(--s-3);">
+                  <div class="form-group">
+                    <label class="form-label">Revenue Growth %</label>
+                    <input type="number" class="form-input" value="5" step="0.1">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">COGS % of Revenue</label>
+                    <input type="number" class="form-input" value="25" step="0.1">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Headcount Change</label>
+                    <input type="number" class="form-input" value="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Comp Increase %</label>
+                    <input type="number" class="form-input" value="0" step="0.1">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderReportView() {
+        return `
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3>📋 Close Pack Generation</h3>
+            </div>
+            <div class="card-body">
+              <p>Generate professional close pack reports for executive review and board presentations.</p>
+              
+              <div class="d-flex gap-3 mb-4">
+                <div class="form-group">
+                  <label class="form-label">Report Period</label>
+                  <input type="month" class="form-input" value="2024-03">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Template</label>
+                  <select class="form-input">
+                    <option>Executive Summary</option>
+                    <option>Board Package</option>
+                    <option>Variance Report</option>
+                    <option>KPI Dashboard</option>
+                  </select>
+                </div>
+                <div class="form-group" style="align-self: end;">
+                  <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+                </div>
+              </div>
+
+              <div class="scenario-board">
+                <div class="scenario-card">
+                  <h4>Executive Summary</h4>
+                  <div class="text-muted text-small mb-3">High-level financial overview</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Status:</span>
+                    <span class="font-weight-bold text-muted">Ready</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>KPI Table</h4>
+                  <div class="text-muted text-small mb-3">Key performance indicators</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Metrics:</span>
+                    <span class="font-weight-bold">15</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Variance Bridges</h4>
+                  <div class="text-muted text-small mb-3">Waterfall analysis charts</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Charts:</span>
+                    <span class="font-weight-bold">5</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="height: 200px; background: var(--muted); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; margin: var(--s-4) 0;">
+                <div style="text-align: center; color: var(--text-muted);">
+                  <div style="font-size: 48px; margin-bottom: var(--s-2);">📄</div>
+                  <h4>Report Preview</h4>
+                  <p>Generate report to see PDF preview</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAuditView() {
+        return `
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3>🔍 Audit Trail</h3>
+            </div>
+            <div class="card-body">
+              <p>Complete audit trail of all activities, decisions, and data transformations with SHA-256 hashes.</p>
+              
+              <div class="d-flex gap-3 mb-4">
+                <div class="form-group">
+                  <label class="form-label">Export Period</label>
+                  <input type="month" class="form-input" value="2024-03">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Format</label>
+                  <select class="form-input">
+                    <option>CSV (Detailed)</option>
+                    <option>JSON (Raw)</option>
+                    <option>PDF (Summary)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="align-self: end;">
+                  <button class="btn btn-primary" onclick="exportAuditLog()">Export Audit</button>
+                </div>
+              </div>
+
+              <div class="scenario-board">
+                <div class="scenario-card">
+                  <h4>Data Snapshots</h4>
+                  <div class="text-muted text-small mb-3">Immutable data versions</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Count:</span>
+                    <span class="font-weight-bold">3</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Decision Log</h4>
+                  <div class="text-muted text-small mb-3">User actions and choices</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Entries:</span>
+                    <span class="font-weight-bold">${AppState.decisions.length}</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Transformations</h4>
+                  <div class="text-muted text-small mb-3">Data processing steps</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Operations:</span>
+                    <span class="font-weight-bold">12</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s-4); margin-top: var(--s-4);">
+                <h4>Recent Activity</h4>
+                <div style="max-height: 200px; overflow-y: auto; margin-top: var(--s-3);">
+                  ${AppState.decisions.slice(-5).map(decision => `
+                    <div class="d-flex justify-content-between mb-3" style="padding: var(--s-2); background: var(--muted); border-radius: var(--r-sm);">
+                      <span class="text-small">${decision.text}</span>
+                      <span class="text-small text-muted">${decision.timestamp}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderDefaultView() {
+        return `
+          <div class="card">
+            <div class="card-header">
+              <h3>Welcome to FP&A Close Studio</h3>
+            </div>
+            <div class="card-body">
+              <p>Modern, offline-first application for monthly financial close processes with Salesforce Lightning Design System.</p>
+              <div class="scenario-board">
+                <div class="scenario-card active">
+                  <h4>Base Case</h4>
+                  <div class="text-muted text-small mb-3">Conservative growth</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">+5%</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Upside</h4>
+                  <div class="text-muted text-small mb-3">Optimistic scenario</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">+15%</span>
+                  </div>
+                </div>
+                <div class="scenario-card">
+                  <h4>Downside</h4>
+                  <div class="text-muted text-small mb-3">Conservative scenario</div>
+                  <div class="d-flex justify-content-between">
+                    <span>Revenue Growth:</span>
+                    <span class="font-weight-bold">-5%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
       }
 
       // Command Palette with 50-line Fuzzy Search
@@ -746,6 +1210,32 @@
       function loadDemo() {
         logDecision('Demo workspace loaded - Salesforce Lightning theme active');
         alert('Demo data loaded! Navigate between sections using the left menu or ⌘K command palette.');
+      }
+
+      // Action Functions for View Interactions
+      function triggerFileUpload() {
+        logDecision('File upload triggered');
+        alert('File picker would open here. Supports CSV and XLSX files.');
+      }
+
+      function runValidation() {
+        logDecision('Validation process started');
+        alert('Running validation rules on imported data...');
+      }
+
+      function runAnalysis() {
+        logDecision('Variance analysis initiated');
+        alert('Analyzing variances between actual and budget data...');
+      }
+
+      function runForecast() {
+        logDecision('Forecast calculation started');
+        alert('Running forecast models with current driver assumptions...');
+      }
+
+      function generateReport() {
+        logDecision('Close pack generation initiated');
+        alert('Generating professional close pack report...');
       }
 
       // Accessibility
