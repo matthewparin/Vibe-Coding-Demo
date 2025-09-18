@@ -709,6 +709,12 @@
             break;
           case 'analyze':
             content.innerHTML = renderAnalyzeView();
+            // Auto-render chart if demo data is loaded
+            setTimeout(() => {
+              if (AppState.decisions.length > 0) { // Check if demo was loaded
+                renderVarianceChart();
+              }
+            }, 100);
             break;
           case 'forecast':
             content.innerHTML = renderForecastView();
@@ -853,7 +859,7 @@
                 </div>
               </div>
 
-              <div style="height: 300px; background: var(--muted); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; margin: var(--s-4) 0;">
+              <div class="analyze-chart-placeholder" style="height: 300px; background: var(--muted); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; margin: var(--s-4) 0;">
                 <div style="text-align: center; color: var(--text-muted);">
                   <div style="font-size: 48px; margin-bottom: var(--s-2);">📈</div>
                   <h4>Variance Chart</h4>
@@ -1453,6 +1459,12 @@
       // Demo Functions
       function loadDemo() {
         logDecision('Demo workspace loaded - Salesforce Lightning theme active');
+        
+        // Auto-render chart if we're on the analyze view
+        if (AppState.currentView === 'analyze') {
+          setTimeout(() => renderVarianceChart(), 100);
+        }
+        
         showToast('Demo Data Loaded', 'Navigate between sections using the left menu or ⌘K command palette.', 'success');
       }
 
@@ -1490,8 +1502,166 @@
           button.disabled = false;
           button.textContent = 'Run Analysis';
           showInlineStatus('mainContent', 'success', 'Analysis complete', 3000);
+          renderVarianceChart();
           showToast('Analysis Complete', 'Variance analysis finished. Charts updated with latest data.', 'success');
         }, 1500);
+      }
+
+      function renderVarianceChart() {
+        // Find the chart placeholder in the current view
+        const chartPlaceholder = document.querySelector('.analyze-chart-placeholder');
+        if (!chartPlaceholder) return;
+
+        // Create canvas element for chart
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 300;
+        canvas.style.width = '100%';
+        canvas.style.height = '300px';
+        
+        // Replace placeholder with canvas
+        chartPlaceholder.innerHTML = '';
+        chartPlaceholder.appendChild(canvas);
+        
+        // Get 2D context and render waterfall chart
+        const ctx = canvas.getContext('2d');
+        renderWaterfallChart(ctx, canvas.width, canvas.height);
+      }
+
+      function renderWaterfallChart(ctx, width, height) {
+        // Sample variance data
+        const data = [
+          { label: 'Budget', value: 1000000, color: '#0176D3' },
+          { label: 'Volume', value: 150000, color: '#4BC85C' },
+          { label: 'Price', value: -50000, color: '#FFB75D' },
+          { label: 'Mix', value: 75000, color: '#4BC85C' },
+          { label: 'Other', value: -25000, color: '#FFB75D' },
+          { label: 'Actual', value: 1150000, color: '#0176D3' }
+        ];
+        
+        // Chart dimensions
+        const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Set font and styles
+        ctx.font = '12px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#333';
+        
+        // Calculate positions and running totals
+        let runningTotal = 0;
+        const barWidth = chartWidth / (data.length + 1);
+        const maxValue = Math.max(...data.map(d => Math.abs(d.value))) * 1.2;
+        const scale = chartHeight / (maxValue * 2);
+        const zeroLine = margin.top + chartHeight / 2;
+        
+        // Draw grid lines
+        ctx.strokeStyle = '#E5E5E5';
+        ctx.lineWidth = 1;
+        
+        // Horizontal grid lines
+        for (let i = 0; i <= 4; i++) {
+          const y = margin.top + (chartHeight * i / 4);
+          ctx.beginPath();
+          ctx.moveTo(margin.left, y);
+          ctx.lineTo(margin.left + chartWidth, y);
+          ctx.stroke();
+        }
+        
+        // Draw bars and calculate running totals
+        let currentTotal = data[0].value; // Start with budget
+        
+        data.forEach((item, index) => {
+          const x = margin.left + (index + 0.5) * barWidth;
+          const barHeightPx = Math.abs(item.value) * scale;
+          
+          let barY, barHeight;
+          
+          if (index === 0) {
+            // Budget bar - starts from zero
+            barY = zeroLine - barHeightPx;
+            barHeight = barHeightPx;
+          } else if (index === data.length - 1) {
+            // Actual bar - starts from zero
+            barY = zeroLine - barHeightPx;
+            barHeight = barHeightPx;
+          } else {
+            // Variance bars - float at current total level
+            const baseY = zeroLine - (currentTotal * scale);
+            if (item.value >= 0) {
+              barY = baseY - barHeightPx;
+              currentTotal += item.value;
+            } else {
+              barY = baseY;
+              currentTotal += item.value;
+            }
+            barHeight = barHeightPx;
+          }
+          
+          // Draw bar with slight shadow effect
+          ctx.fillStyle = item.color;
+          ctx.fillRect(x - barWidth/3, barY, barWidth * 2/3, barHeight);
+          
+          // Add subtle border
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x - barWidth/3, barY, barWidth * 2/3, barHeight);
+          
+          // Draw connecting lines for variance components
+          if (index > 0 && index < data.length - 1) {
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            
+            const prevX = margin.left + (index - 0.5) * barWidth + barWidth/3;
+            const currentX = x - barWidth/3;
+            
+            // Connect from previous bar top to current bar
+            ctx.beginPath();
+            ctx.moveTo(prevX, barY + (item.value >= 0 ? barHeight : 0));
+            ctx.lineTo(currentX, barY + (item.value >= 0 ? barHeight : 0));
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          
+          // Draw value labels above/below bars
+          ctx.fillStyle = '#333';
+          ctx.textAlign = 'center';
+          ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+          const labelY = barY + (item.value >= 0 ? -8 : barHeight + 15);
+          ctx.fillText(formatCurrency(item.value), x, labelY);
+          
+          // Draw category labels (rotated)
+          ctx.save();
+          ctx.translate(x, margin.top + chartHeight + 15);
+          ctx.rotate(-Math.PI / 6); // 30 degrees
+          ctx.textAlign = 'right';
+          ctx.font = '10px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = '#666';
+          ctx.fillText(item.label, 0, 0);
+          ctx.restore();
+        });
+        
+        // Draw title
+        ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#333';
+        ctx.fillText('Revenue Variance Waterfall - March 2024', width / 2, 25);
+      }
+
+      function formatCurrency(value) {
+        const absValue = Math.abs(value);
+        if (absValue >= 1000000) {
+          return (value >= 0 ? '+' : '-') + '$' + (absValue / 1000000).toFixed(1) + 'M';
+        } else if (absValue >= 1000) {
+          return (value >= 0 ? '+' : '-') + '$' + (absValue / 1000).toFixed(0) + 'K';
+        } else {
+          return (value >= 0 ? '+' : '') + '$' + value.toLocaleString();
+        }
       }
 
       function runForecast() {
